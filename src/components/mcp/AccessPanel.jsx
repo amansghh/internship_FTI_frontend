@@ -1,66 +1,90 @@
-import {useState} from 'react';
-import axios from 'axios';
-import {toast} from 'react-toastify';
+import React from 'react';
+import {useMcpSession} from '../../hooks/useMcpSession';
+import '../../assets/AccessPanel.css';
 
-const AccessPanel = ({apiKey, setApiKey, fti, setFti}) => {
-    const [data, setData] = useState(null);
+const AccessPanel = () => {
+    const {
+        apiKey,
+        setApiKey,
+        fti,
+        setFti,
+        protocolVersion,
+        setProtocolVersion,
+        sessionId,
+        initialized,
+        initializeSession,
+        sendInitialized,
+        serverResponse
+    } = useMcpSession();
 
-    const fetchData = async () => {
-        try {
-            const res = await axios.get('http://localhost:8000/list', {
-                params: {fti},
-                headers: {'api-key': apiKey || ''}
-            });
-            setData(res.data.functionalities);
-            toast.success(`Fetched ${fti ? 'FTI-compatible' : 'Standard'} features!`);
-        } catch (err) {
-            const msg = err.response?.data?.detail || "Unknown error";
-            toast.error(`❌ ${msg}`);
-            setData(null);
-        }
+    const handleStartSession = async () => {
+        await initializeSession();
+    };
+
+    const handleConfirmInitialized = async () => {
+        await sendInitialized();
     };
 
     return (
-        <>
-            <h1>Access Panel</h1>
-            <p className="subtitle">
-                Request secure access to standard or FTI-compatible functionalities through your API key.
-            </p>
+        <div className="access-panel">
+            <h2>MCP Access Panel</h2>
 
-            <div className="input-group">
-                <label>API Key</label>
+            <div className="form-group">
+                <label>API Key:</label>
                 <input
-                    placeholder="Enter your API key (e.g. key_fti)"
+                    type="text"
                     value={apiKey}
-                    onChange={e => setApiKey(e.target.value)}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Enter your API key"
                 />
             </div>
 
-            <div className="checkbox">
+            <div className="form-group">
+                <label>Protocol Version:</label>
                 <input
-                    type="checkbox"
-                    checked={fti}
-                    onChange={e => setFti(e.target.checked)}
+                    type="text"
+                    value={protocolVersion}
+                    onChange={(e) => setProtocolVersion(e.target.value)}
+                    placeholder="e.g. 2025-06-18"
                 />
-                <label>Enable FTI Mode</label>
             </div>
 
-            <button onClick={fetchData}>Fetch Functionalities</button>
+            <div className="form-group checkbox">
+                <label>
+                    <input
+                        type="checkbox"
+                        checked={fti}
+                        onChange={(e) => setFti(e.target.checked)}
+                    />
+                    Enable FTI mode
+                </label>
+            </div>
 
-            {data && data.length > 0 ? (
-                <div className="features-grid">
-                    {data.map((func, i) => (
-                        <div key={i} className="feature-card">
-                            <h3>{func.name.replace(/_/g, ' ')}</h3>
-                            <p>{func.description}</p>
-                            <code>{func.method} {func.endpoint}</code>
-                        </div>
-                    ))}
+            <div className="button-group">
+                <button onClick={handleStartSession} disabled={!apiKey || sessionId}>
+                    Initialize MCP Session
+                </button>
+                <button
+                    onClick={handleConfirmInitialized}
+                    disabled={!sessionId || initialized}
+                >
+                    Confirm Initialized
+                </button>
+            </div>
+
+            <div className="status-box">
+                <p><strong>Session ID:</strong> {sessionId || "—"}</p>
+                <p><strong>Initialized:</strong> {initialized ? "✅ Yes" : "❌ No"}</p>
+                <p><strong>FTI Mode:</strong> {fti ? "🟢 Enabled" : "⚪ Disabled"}</p>
+                <p><strong>Protocol Version:</strong> {protocolVersion}</p>
+            </div>
+
+            {serverResponse && (
+                <div className="json-preview">
+                    <pre>{JSON.stringify(serverResponse, null, 2)}</pre>
                 </div>
-            ) : (
-                <div className="results">No functionalities available.</div>
             )}
-        </>
+        </div>
     );
 };
 

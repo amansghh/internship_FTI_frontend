@@ -1,8 +1,7 @@
 import {useState} from 'react';
-import axios from 'axios';
 import {toast} from 'react-toastify';
+import {initializeSession as apiInit, sendInitializedNotification} from '../services/mcpService';
 
-const MCP_URL = 'http://localhost:8000/mcp';
 const PROTOCOL_VERSION = '2025-06-18';
 
 export const useMcpSession = () => {
@@ -10,6 +9,8 @@ export const useMcpSession = () => {
     const [apiKey, setApiKey] = useState('');
     const [fti, setFti] = useState(false);
     const [initialized, setInitialized] = useState(false);
+    const [protocolVersion, setProtocolVersion] = useState('2025-06-18');
+    const [serverResponse, setServerResponse] = useState(null);
 
     const headers = {
         'api-key': apiKey,
@@ -21,20 +22,10 @@ export const useMcpSession = () => {
 
     const initializeSession = async () => {
         try {
-            const res = await axios.post(MCP_URL, {
-                jsonrpc: '2.0',
-                id: 1,
-                method: 'initialize',
-                params: {
-                    protocolVersion: PROTOCOL_VERSION,
-                    fti,
-                },
-            }, {headers});
-
-            const sid = res.headers['mcp-session-id'];
-            if (!sid) throw new Error('No session ID returned');
-
-            setSessionId(sid);
+            const {sessionId, capabilities, serverInfo, full} = await apiInit(apiKey, fti, protocolVersion);
+            if (!sessionId) throw new Error('No session ID returned');
+            setSessionId(sessionId);
+            setServerResponse(full); // save full response JSON
             toast.success('Session initialized');
         } catch (err) {
             console.error(err);
@@ -42,14 +33,10 @@ export const useMcpSession = () => {
         }
     };
 
+
     const sendInitialized = async () => {
         try {
-            await axios.post(MCP_URL, {
-                jsonrpc: '2.0',
-                method: 'notifications/initialized',
-                params: {},
-            }, {headers});
-
+            await sendInitializedNotification(apiKey, sessionId, PROTOCOL_VERSION);
             setInitialized(true);
             toast.success('Session marked as initialized');
         } catch (err) {
@@ -63,10 +50,13 @@ export const useMcpSession = () => {
         setApiKey,
         fti,
         setFti,
+        protocolVersion,
+        setProtocolVersion,
         sessionId,
         initialized,
         initializeSession,
         sendInitialized,
         headers,
+        serverResponse,
     };
 };
