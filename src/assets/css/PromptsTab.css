@@ -1,0 +1,117 @@
+.prompts-tab {
+    padding: 1rem;
+}
+
+/* Grid layout */
+.prompt-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+/* FTI-style prompt card */
+.prompt-card {
+    background: #f4f1fa;
+    padding: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.2s ease-in-out;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    color: #333;
+    border: 1px solid transparent;
+}
+
+.prompt-card:hover {
+    background: #e8dfff;
+    transform: translateY(-2px);
+    border-color: #d1c3ec;
+}
+
+/* Modal overlay */
+.prompt-detail-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+/* Modal box */
+.prompt-detail {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 600px;
+    width: 90%;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Prompt name in purple */
+.prompt-detail h3 {
+    margin-top: 0;
+    color: #5f259f;
+    font-weight: 600;
+    font-size: 1.4rem;
+}
+
+/* Shared JSON preview styling */
+.json-preview.centered {
+    background: #282a36;
+    color: #f8f8f2;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    font-size: 0.9rem;
+    font-family: 'Fira Code', monospace;
+    overflow-x: auto;
+    width: 100%;
+    max-width: calc(100% - 3rem);
+    margin: 0.5rem auto 0;
+    animation: fadeInPreview 0.4s ease forwards;
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+}
+
+/* Reusable pre styling */
+pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Fade animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeInPreview {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Shared close button */
+.close-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+}

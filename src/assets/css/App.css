@@ -83,6 +83,17 @@ body {
     font-weight: 600;
 }
 
+.arrow {
+    display: inline-block;
+    transition: transform 0.3s ease;
+    margin-right: 8px;
+}
+
+.arrow.rotated {
+    transform: rotate(90deg);
+}
+
+
 /* Main content layout */
 .main-content {
     grid-area: main;
@@ -283,7 +294,7 @@ button:hover {
     font-weight: 600;
     color: #999;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 .sidebar nav ul {
