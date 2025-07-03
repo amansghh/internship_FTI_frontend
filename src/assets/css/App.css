@@ -1,0 +1,314 @@
+/* Reset and base */
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #f5f6f8;
+    color: #333;
+    padding: 0;
+    width: 100%;
+}
+
+
+/* Grid layout for the app */
+.grid-layout {
+    width: 100vw;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: 60px 1fr;
+    grid-template-areas:
+    "topbar topbar"
+    "sidebar main";
+    min-height: 100vh;
+}
+
+
+/* Topbar header */
+.topbar {
+    grid-area: topbar;
+    background-color: #5f259f;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0 24px;
+    font-size: 20px;
+    font-weight: 600;
+    height: 60px;
+    box-sizing: border-box;
+}
+
+/* Logo styles */
+.topbar-logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.topbar-logo {
+    height: 32px;
+    max-width: 160px;
+    object-fit: contain;
+}
+
+/* Sidebar styles */
+.sidebar {
+    grid-area: sidebar;
+    background: #ffffff;
+    padding: 30px 20px;
+    border-right: 1px solid #eee;
+    box-sizing: border-box;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar nav li {
+    margin-bottom: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.sidebar nav li:hover {
+    color: #5f259f;
+}
+
+.sidebar nav .active {
+    color: #5f259f;
+    font-weight: 600;
+}
+
+/* Main content layout */
+.main-content {
+    grid-area: main;
+    padding: 40px 60px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    box-sizing: border-box;
+    background-color: #f5f6f8;
+}
+
+/* Centered container for the page */
+.app-container {
+    width: 100%;
+    max-width: 1000px;
+    background: #fff;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+/* Headings and subtitles */
+h1 {
+    font-size: 26px;
+    color: #5f259f;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    margin-bottom: 30px;
+    color: #666;
+}
+
+/* Input and checkbox */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #fff;
+    color: #000;
+    box-sizing: border-box;
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.checkbox input {
+    margin-right: 8px;
+}
+
+/* Button */
+button {
+    background-color: #5f259f;
+    color: white;
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+    background-color: #4c1c85;
+}
+
+/* Functionality cards grid */
+.features-grid {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.feature-card {
+    background: #fafafa;
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease-in-out;
+}
+
+.feature-card:hover {
+    background: #f0f0ff;
+    border-color: #5f259f;
+}
+
+.feature-card h3 {
+    margin: 0 0 10px;
+    color: #5f259f;
+}
+
+/* Results output */
+.results {
+    margin-top: 30px;
+    background: #f1f1f1;
+    padding: 16px;
+    border-radius: 10px;
+    white-space: pre-wrap;
+    font-size: 14px;
+    color: #111;
+}
+
+
+/* Absolute toggle button for perfect left placement */
+.sidebar-toggle {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    display: none; /* default hidden for desktop */
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .grid-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+      "topbar"
+      "main";
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        width: 240px;
+        height: calc(100% - 60px);
+        background: white;
+        z-index: 10;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        border-right: 1px solid #eee;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-toggle {
+        display: block;
+        /*padding-left: 0;*/
+    }
+
+    .main-content {
+        padding: 20px;
+    }
+
+    .app-container {
+        padding: 20px;
+    }
+}
+
+.sidebar-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.sidebar-logo {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+}
+
+.sidebar-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #5f259f;
+    text-align: center;
+}
+
+.sidebar-section {
+    margin: 20px 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.sidebar nav li {
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.sidebar nav li:hover {
+    background-color: #f0f0ff;
+    color: #5f259f;
+}
+
+.sidebar nav li.active {
+    background-color: #e5dbf7;
+    color: #5f259f;
+    font-weight: 600;
+}
