@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {useMcpSession} from '../../hooks/useMcpSession';
 import '../../assets/css/AccessPanel.css';
 
@@ -17,6 +17,9 @@ const AccessPanel = () => {
         serverResponse, resetSession
     } = useMcpSession();
 
+
+    const [showApiKey, setShowApiKey] = useState(false);
+
     const handleStartSession = async () => {
         await initializeSession();
     };
@@ -30,14 +33,25 @@ const AccessPanel = () => {
             <div className="access-panel">
                 <h2>MCP Access Panel</h2>
 
-                <div className="form-group">
+                {/* API Key Field */}
+                <div className="form-group api-key-group">
                     <label>API Key:</label>
-                    <input
-                        type="text"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="Enter your API key"
-                    />
+                    <div className="input-with-toggle">
+                        <input
+                            type={showApiKey ? "text" : "password"} // 👈 switch type
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            placeholder="Enter your API key"
+                        />
+                        <button
+                            type="button"
+                            className="toggle-visibility"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            aria-label="Toggle API key visibility"
+                        >
+                            {showApiKey ? '🙈' : '👁'}
+                        </button>
+                    </div>
                 </div>
 
                 <div className="form-group">
@@ -86,11 +100,13 @@ const AccessPanel = () => {
                 </div>
             </div>
 
-            {serverResponse && (
-                <div className="json-preview animated">
-                    <pre>{JSON.stringify(serverResponse, null, 2)}</pre>
-                </div>
-            )}
+            {
+                serverResponse && (
+                    <div className="json-preview animated">
+                        <pre>{JSON.stringify(serverResponse, null, 2)}</pre>
+                    </div>
+                )
+            }
         </div>
     );
 };

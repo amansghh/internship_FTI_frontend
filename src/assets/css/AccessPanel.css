@@ -129,3 +129,29 @@ button:hover {
     font-size: 0.9rem;
     color: #4a2977;
 }
+
+
+.api-key-group .input-with-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.api-key-group input[type="password"],
+.api-key-group input[type="text"] {
+    flex: 1;
+}
+
+.toggle-visibility {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #5f259f;
+    padding: 4px 8px;
+    transition: color 0.2s ease;
+}
+
+.toggle-visibility:hover {
+    color: #3e1a6f;
+}
