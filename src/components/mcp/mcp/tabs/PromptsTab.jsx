@@ -2,6 +2,9 @@ import React, {useState} from 'react';
 import {usePrompts} from '../../../../hooks/usePrompts';
 import '../../../../assets/css/PromptsTab.css';
 
+import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
+import {dracula} from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 const PromptsTab = () => {
     const {prompts, loading, error} = usePrompts();
     const [selectedPrompt, setSelectedPrompt] = useState(null);
@@ -31,22 +34,44 @@ const PromptsTab = () => {
                         {selectedPrompt.arguments && Object.keys(selectedPrompt.arguments).length > 0 && (
                             <div className="prompt-args">
                                 <h4>Arguments</h4>
-                                <pre className="json-preview centered">
-                                    {JSON.stringify(selectedPrompt.arguments, null, 2)}
-                                </pre>
+                                <div className="json-preview centered">
+                                    <SyntaxHighlighter
+                                        language="json"
+                                        style={dracula}
+                                        showLineNumbers={false}
+                                        wrapLongLines={true}
+                                        customStyle={{
+                                            background: 'transparent',
+                                            fontSize: '0.9rem',
+                                            padding: '0'
+                                        }}
+                                    >
+                                        {JSON.stringify(selectedPrompt.arguments, null, 2)}
+                                    </SyntaxHighlighter>
+                                </div>
                             </div>
                         )}
 
-                        <div className="prompt-template">
-                            {selectedPrompt.template && selectedPrompt.template.trim() !== '' && (
-                                <>
-                                    <h4>Template</h4>
-                                    <div className="json-preview centered">
-                                        <pre>{selectedPrompt.template}</pre>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        {selectedPrompt.template && selectedPrompt.template.trim() !== '' && (
+                            <div className="prompt-template">
+                                <h4>Template</h4>
+                                <div className="json-preview centered">
+                                    <SyntaxHighlighter
+                                        language="json"
+                                        style={dracula}
+                                        showLineNumbers={false}
+                                        wrapLongLines={true}
+                                        customStyle={{
+                                            background: 'transparent',
+                                            fontSize: '0.9rem',
+                                            padding: '0'
+                                        }}
+                                    >
+                                        {selectedPrompt.template}
+                                    </SyntaxHighlighter>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

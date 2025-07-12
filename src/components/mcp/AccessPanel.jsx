@@ -1,6 +1,8 @@
 import React, {useState} from 'react';
 import {useMcpSession} from '../../hooks/useMcpSession';
 import '../../assets/css/AccessPanel.css';
+import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
+import {dracula} from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const AccessPanel = () => {
     const {
@@ -100,13 +102,20 @@ const AccessPanel = () => {
                 </div>
             </div>
 
-            {
-                serverResponse && (
-                    <div className="json-preview animated">
-                        <pre>{JSON.stringify(serverResponse, null, 2)}</pre>
-                    </div>
-                )
-            }
+            {serverResponse && (
+                <div className="json-preview animated">
+                    <SyntaxHighlighter
+                        language="json"
+                        style={dracula}
+                        showLineNumbers={false}
+                        wrapLongLines={true}
+                        customStyle={{background: 'transparent', fontSize: '0.9rem', padding: '0'}}
+                    >
+                        {JSON.stringify(serverResponse, null, 2)}
+                    </SyntaxHighlighter>
+                </div>
+            )}
+
         </div>
     );
 };

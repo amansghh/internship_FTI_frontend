@@ -69,6 +69,7 @@
     animation: fadeInPreview 0.5s ease forwards;
 }
 
+
 @keyframes fadeInPreview {
     to {
         opacity: 1;

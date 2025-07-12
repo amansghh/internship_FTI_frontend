@@ -3,6 +3,8 @@ import {useResources} from '../../../../hooks/useResources.js';
 import {useToolRunner} from '../../../../hooks/useToolRunner.js';
 import '../../../../assets/css/ResourcesTab.css';
 import ReactMarkdown from 'react-markdown';
+import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
+import {dracula} from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 /* helper: base64 → Blob URL */
 const b64ToUrl = (b64, mime) => {
@@ -77,7 +79,19 @@ const ResourcesTab = () => {
                         {/* JSON Preview */}
                         {prettyOutput && (
                             <div className="runner-output json-preview centered">
-                                <pre>{JSON.stringify(prettyOutput, null, 2)}</pre>
+                                <SyntaxHighlighter
+                                    language="json"
+                                    style={dracula}
+                                    showLineNumbers={false}
+                                    wrapLongLines={true}
+                                    customStyle={{
+                                        background: 'transparent',
+                                        fontSize: '0.9rem',
+                                        padding: '0'
+                                    }}
+                                >
+                                    {JSON.stringify(prettyOutput, null, 2)}
+                                </SyntaxHighlighter>
                             </div>
                         )}
 
