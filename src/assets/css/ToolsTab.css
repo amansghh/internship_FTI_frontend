@@ -1,23 +1,26 @@
+/* ╔═════════════════════════════════╗
+   ║  TOOLS TAB – FULL STYLESHEET   ║
+   ╚═════════════════════════════════╝ */
+
+/* 1 ─── Card grid */
 .tools-tab {
     padding: 1rem;
 }
 
-/* Grid layout for tool cards */
 .tool-grid {
     display: grid;
     gap: 1rem;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
-/* FTI-style card appearance */
 .tool-card {
     background: #f4f1fa;
     padding: 1rem;
     border-radius: 10px;
     cursor: pointer;
     text-align: center;
-    transition: 0.2s ease-in-out;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    transition: .2s ease-in-out;
+    box-shadow: 0 1px 4px rgba(0 0 0/.06);
     color: #333;
     border: 1px solid transparent;
 }
@@ -28,62 +31,47 @@
     border-color: #d1c3ec;
 }
 
-/* Overlay for tool modal */
+/* 2 ─── Overlay */
 .tool-detail-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
+    inset: 0;
+    background: rgba(0 0 0/.4);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 999;
 }
 
-/* Tool detail modal */
+/* 3 ─── Modal */
 .tool-detail {
-    background: white;
+    background: #fff;
     border-radius: 10px;
-    padding: 2rem;
-    max-width: 600px;
-    width: 90%;
+    padding: 1.75rem 2rem;
+    max-width: 900px;
+    width: 95%;
+    max-height: 85vh;
+    overflow: hidden;
     position: relative;
-    animation: fadeIn 0.3s ease;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    animation: fadeIn .25s ease;
+    box-shadow: 0 4px 16px rgba(0 0 0/.1);
+    display: flex;
+    flex-direction: column;
 }
 
-/* Tool name with FTI purple */
-.tool-detail h3 {
-    margin-top: 0;
-    color: #5f259f;
-    font-weight: 600;
-    font-size: 1.4rem;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
-/* Tool meta section */
-.tool-meta {
-    margin: 1rem 0;
-    font-size: 0.95rem;
-    color: #444;
-}
-
-/* Code schema area */
-.tool-schema pre {
-    background: #282a36;
-    color: #f8f8f2;
-    padding: 1rem;
-    border-radius: 6px;
-    overflow-x: auto;
-    font-size: 0.85rem;
-    font-family: 'Fira Code', monospace;
-}
-
-/* Close button inside modal */
 .close-btn {
     position: absolute;
-    top: 0.5rem;
+    top: .75rem;
     right: 1rem;
     font-size: 1.5rem;
     background: none;
@@ -92,19 +80,118 @@
     cursor: pointer;
 }
 
-/* Fade-in for modal */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+.tool-detail h3 {
+    margin: 0 0 .75rem 0;
+    color: #5f259f;
+    font-weight: 600;
+    font-size: 1.45rem;
 }
 
-/* Fade-in for JSON preview area */
+/* 4 ─── Split layout */
+.tool-detail-body {
+    flex: 1 1 auto;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    overflow: hidden;
+}
+
+.tool-info, .tool-runner {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.tool-info > *:first-child, .tool-runner > *:first-child {
+    margin-top: 0;
+}
+
+/* LEFT specifics */
+.tool-meta {
+    margin: 0 0 1.25rem 0;
+    font-size: .95rem;
+    color: #444;
+}
+
+.tool-meta p {
+    margin: .25rem 0;
+}
+
+.tool-schema h4 {
+    margin: 0 0 .5rem 0;
+}
+
+/* RIGHT specifics */
+.tool-runner h4:first-child {
+    margin: 0 0 .5rem 0;
+}
+
+.tool-args-input {
+    width: 100%;
+    border: 1px solid #d1c3ec;
+    border-radius: 6px;
+    padding: .75rem;
+    margin-bottom: .75rem;
+    resize: vertical;
+    font-family: 'Fira Code', monospace;
+}
+
+.run-btn {
+    background: #5f259f;
+    color: #fff;
+    border: none;
+    padding: .5rem 1.25rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.run-btn:disabled {
+    opacity: .6;
+    cursor: default;
+}
+
+/* Save button extra space */
+.save-btn {
+    margin-top: .75rem;
+}
+
+/* Keep textarea + first two buttons fixed; output scrolls */
+.tool-runner > textarea,
+.tool-runner > button:first-of-type,
+.tool-runner > button.save-btn {
+    flex-shrink: 0;
+}
+
+/* Always-visible output box */
+.runner-output {
+    flex: 1 1 auto;
+    margin-top: .8rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 5 ─── Code blocks */
+.json-preview.centered,
+.tool-schema pre,
+.runner-output {
+    background: #282a36;
+    color: #f8f8f2;
+    border-radius: 6px;
+    padding: 1rem 1.4rem;
+    font-size: .88rem;
+    font-family: 'Fira Code', monospace;
+    overflow: auto;
+}
+
+.json-preview.centered,
+.tool-schema pre {
+    animation: fadeInPreview .35s ease forwards;
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+}
+
 @keyframes fadeInPreview {
     to {
         opacity: 1;
@@ -112,25 +199,12 @@
     }
 }
 
-.json-preview.centered {
-    background: #282a36;
-    color: #f8f8f2;
-    border-radius: 6px;
-    padding: 1rem 1.5rem;
-    font-size: 0.9rem;
-    font-family: 'Fira Code', monospace;
-    overflow-x: auto;
-    width: 100%;
-    max-width: calc(100% - 3rem);
-    box-sizing: border-box;
-    margin: 0.5rem auto 0;
-    animation: fadeInPreview 0.4s ease forwards;
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-}
-
-/* Word wrapping for all <pre> blocks */
 pre {
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.schema-placeholder {
+    color: #777;
+    font-style: italic;
 }

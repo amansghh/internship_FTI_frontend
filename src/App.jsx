@@ -7,6 +7,7 @@ import Sidebar from './components/layout/Sidebar.jsx';
 import {McpProvider} from "./context/McpContext.jsx";
 import MCPPage from "./components/mcp/mcp/MCPPage.jsx";
 import {useState, useEffect} from 'react';
+import SecureFilePage from "./components/secure/SecureFilePage.jsx";
 
 function App() {
     const [apiKey, setApiKey] = useState('');
@@ -23,6 +24,7 @@ function App() {
     const renderMain = () => {
         if (activeTab === "admin") return <AdminPage/>;
         if (activeTab === "mcp") return <MCPPage/>;
+        if (activeTab === "secure-file") return <SecureFilePage />;
         return <AccessPanel/>;
     };
 

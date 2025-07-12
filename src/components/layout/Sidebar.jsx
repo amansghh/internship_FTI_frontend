@@ -46,7 +46,13 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
                         Admin Panel
                     </li>
                     <li>LLM Process (soon)</li>
-                    <li>Secure Transfer (soon)</li>
+                    <li
+                        className={activeTab === "secure-file" ? "active" : ""}
+                        onClick={() => setActiveTab("secure-file")}
+                    >
+                        Secure File
+                    </li>
+
                 </ul>
 
                 <div className="sidebar-section">Resources</div>
