@@ -1,7 +1,14 @@
 import React, {useState} from 'react';
 import {useResources} from '../../../../hooks/useResources.js';
+import {useToolRunner} from '../../../../hooks/useToolRunner.js';
 import '../../../../assets/css/ResourcesTab.css';
 import ReactMarkdown from 'react-markdown';
+
+/* helper: base64 → Blob URL */
+const b64ToUrl = (b64, mime) => {
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    return URL.createObjectURL(new Blob([bytes], {type: mime}));
+};
 
 const ResourcesTab = () => {
     const {
@@ -15,10 +22,17 @@ const ResourcesTab = () => {
     } = useResources();
 
     const [expanded, setExpanded] = useState('content');
+    const toggle = section => setExpanded(expanded === section ? null : section);
 
-    const toggle = (section) => {
-        setExpanded(expanded === section ? null : section);
-    };
+    const {run, running, output, error: runErr} = useToolRunner();
+
+    const prettyOutput = output?.data
+        ? {
+            filename: output.filename,
+            mimeType: output.mimeType,
+            size: output.size,
+        }
+        : null;
 
     if (loading) return <p>Loading resources...</p>;
     if (error) return <p className="error-msg">❌ {error}</p>;
@@ -41,14 +55,50 @@ const ResourcesTab = () => {
                 ))}
             </div>
 
-
             {selected && (
                 <div className="resource-modal-overlay" onClick={() => setSelected(null)}>
-                    <div className="resource-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="resource-modal" onClick={e => e.stopPropagation()}>
                         <button className="close-btn" onClick={() => setSelected(null)}>×</button>
                         <h3>{selected.replace(/^file:\/\//, '')}</h3>
 
-                        {/* Content section */}
+                        {/* ⬇️ Download Button */}
+                        <button
+                            className="download-btn"
+                            disabled={running}
+                            onClick={() => run('download_file', {uri: selected})}
+                        >
+                            {running ? 'Downloading…' : '⬇️ Download'}
+                        </button>
+
+                        {runErr && (
+                            <p className="error-msg" style={{marginTop: '.5rem'}}>❌ {runErr}</p>
+                        )}
+
+                        {/* JSON Preview */}
+                        {prettyOutput && (
+                            <div className="runner-output json-preview centered">
+                                <pre>{JSON.stringify(prettyOutput, null, 2)}</pre>
+                            </div>
+                        )}
+
+                        {/* Save Button */}
+                        {output?.data && (
+                            <button
+                                className="save-btn"
+                                onClick={() => {
+                                    const url = b64ToUrl(output.data, output.mimeType);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = output.filename || 'download';
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                }}
+                            >
+                                💾 Save {output.filename}
+                            </button>
+                        )}
+
+                        {/* Content Accordion */}
                         <div className="accordion-section">
                             <div
                                 className={`accordion-header ${expanded === 'content' ? 'expanded' : ''}`}
@@ -57,23 +107,17 @@ const ResourcesTab = () => {
                                 <span className={`triangle ${expanded === 'content' ? 'open' : ''}`}>&#9654;</span>
                                 <h4>📝 Content</h4>
                             </div>
-                            <div
-                                className={`accordion-body-wrapper ${
-                                    expanded === 'content' ? 'open' : ''
-                                }`}
-                            >
+                            <div className={`accordion-body-wrapper ${expanded === 'content' ? 'open' : ''}`}>
                                 <div className="accordion-body">
-                                    {content.text ? (
-                                        <pre className="scroll-content">{content.text}</pre>
-                                    ) : (
-                                        <div className="scroll-content loading-msg">⏳ Loading content...</div>
-                                    )}
+                                    {content.text
+                                        ? <pre className="scroll-content">{content.text}</pre>
+                                        : <div className="scroll-content loading-msg">⏳ Loading content...</div>
+                                    }
                                 </div>
-
                             </div>
                         </div>
 
-                        {/* Metadata section */}
+                        {/* Metadata Accordion */}
                         {content.metadata && (
                             <div className="accordion-section">
                                 <div
@@ -83,24 +127,16 @@ const ResourcesTab = () => {
                                     <span className={`triangle ${expanded === 'metadata' ? 'open' : ''}`}>&#9654;</span>
                                     <h4>📌 Metadata</h4>
                                 </div>
-                                <div
-                                    className={`accordion-body-wrapper ${
-                                        expanded === 'metadata' ? 'open' : ''
-                                    }`}
-                                >
+                                <div className={`accordion-body-wrapper ${expanded === 'metadata' ? 'open' : ''}`}>
                                     <div className="accordion-body">
-                                        {content.metadata ? (
-                                            <div className="scroll-content markdown-preview">
-                                                <ReactMarkdown>{content.metadata}</ReactMarkdown>
-                                            </div>
-                                        ) : (
-                                            <div className="scroll-content loading-msg">⏳ Loading metadata...</div>
-                                        )}
+                                        <div className="scroll-content markdown-preview">
+                                            <ReactMarkdown>{content.metadata}</ReactMarkdown>
+                                        </div>
                                     </div>
-
                                 </div>
                             </div>
                         )}
+
                     </div>
                 </div>
             )}

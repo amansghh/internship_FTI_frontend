@@ -195,3 +195,31 @@
         transform: scale(1);
     }
 }
+
+.download-btn,
+.save-btn {
+    background: #5f259f;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: block;
+    margin: 0.5rem 0;
+}
+
+.download-btn:disabled {
+    opacity: .6;
+    cursor: default;
+}
+
+.runner-output.json-preview.centered {
+    background: #282a36;
+    color: #f8f8f2;
+    border-radius: 6px;
+    padding: 1rem 1.4rem;
+    font-size: 0.88rem;
+    font-family: 'Fira Code', monospace;
+    overflow: auto;
+    margin-top: 0.8rem;
+}
