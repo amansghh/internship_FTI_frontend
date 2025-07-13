@@ -3,8 +3,10 @@ import '../../assets/css/App.css';
 import {useMcpContext} from '../../context/McpContext';
 
 const Sidebar = ({open, activeTab, setActiveTab}) => {
-    const {initialized} = useMcpContext();
+    const {initialized, fti} = useMcpContext();
     const [accessOpen, setAccessOpen] = useState(true);
+
+    const ftiEnabled = initialized && fti;
 
     return (
         <aside className={`sidebar ${open ? 'open' : ''}`}>
@@ -46,12 +48,28 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
                         Admin Panel
                     </li>
                     <li>LLM Process (soon)</li>
+
+                    {/* ✅ Secure File with animated tooltip */}
                     <li
-                        className={activeTab === "secure-file" ? "active" : ""}
-                        onClick={() => setActiveTab("secure-file")}
+                        className={`secure-file-entry ${
+                            activeTab === "secure-file"
+                                ? ftiEnabled ? "active" : "disabled active"
+                                : ftiEnabled ? "" : "disabled"
+                        }`}
+                        onClick={() => ftiEnabled && setActiveTab("secure-file")}
                     >
-                        Secure File
+                        <div className="tooltip-wrapper">
+                            Secure File
+                            {!ftiEnabled && (
+                                <div className="custom-tooltip">
+                                    🔒 Requires FTI mode to be initialized in Access Panel
+                                </div>
+                            )}
+                        </div>
                     </li>
+
+
+
 
                 </ul>
 
