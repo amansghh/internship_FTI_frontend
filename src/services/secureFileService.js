@@ -1,31 +1,78 @@
-import axios from 'axios';
+// services/secureFileService.js
+import axios from "axios";
+import {v4 as uuidv4} from "uuid";
 
-const API = 'http://localhost:8000';
+// MCP entry-point (FastAPI listens here)
+const MCP_ENDPOINT = "http://localhost:8000/mcp";
 
-/* ---------- 1. Upload (client-side encrypted on server) ---------- */
-export const uploadRaw = async (file, apiKey) => {
-    const url = `${API}/secure-file/upload-raw?filename=${encodeURIComponent(file.name)}`;
-    const res = await axios.post(url, file, {
-        headers: {'api-key': apiKey, 'Content-Type': file.type || 'application/octet-stream'},
+/**
+ * Low-level helper to invoke the secure_transfer tool.
+ *
+ * @param {string} action   upload | download | decrypt
+ * @param {object} args     tool arguments (will be merged with { action })
+ * @param {string} apiKey   user's API key
+ * @param {string} sessionId  Mcp-Session-Id returned by /initialize
+ * @returns {object}        tool result (already unwrapped from JSON-RPC)
+ */
+const callSecureTransfer = async (action, args, apiKey, sessionId) => {
+    const PROTOCOL = window.__MCP_PROTOCOL_VERSION__ ?? "2025-06-18";
+
+    const payload = {
+        jsonrpc: "2.0",
+        id: uuidv4(),                 // any unique value
+        method: "tools/call",
+        params: {
+            name: "secure_transfer",
+            arguments: {action, ...args},
+        },
+    };
+
+    const res = await axios.post(MCP_ENDPOINT, payload, {
+        headers: {
+            "api-key": apiKey,
+            "Mcp-Session-Id": sessionId,
+            "Mcp-Protocol-Version": PROTOCOL,
+            Accept: "application/json",
+        },
     });
-    return res.data;  // { file_id, enc_sym_key_b64, nonce_b64, sha256_b64, filename }
+
+    // FastAPI always wraps the result under .result
+    if (res.data?.error) throw new Error(res.data.error.message);
+    return res.data.result;
 };
 
-/* ---------- 2. Download encrypted blob ---------- */
-export const downloadEncrypted = async (fileId, apiKey) => {
-    const url = `${API}/secure-file/download/${fileId}`;
-    const res = await axios.get(url, {
-        headers: {'api-key': apiKey, Accept: 'application/json'},
-    });
-    return res.data;  // JSON bundle shown in backend
+/* ──────────────────────────────── public helpers ─────────────────────────── */
+
+/* 1. upload – send raw file, receive ciphertext bundle */
+export const uploadRaw = async (file, apiKey, sessionId) => {
+    const dataB64 = await file.arrayBuffer().then(buf =>
+        btoa(String.fromCharCode(...new Uint8Array(buf)))
+    );
+
+    return await callSecureTransfer(
+        "upload",
+        {filename: file.name, data_b64: dataB64},
+        apiKey,
+        sessionId,
+    );             // { file_id, nonce_b64, enc_sym_key_b64, … }
 };
 
-/* ---------- 3. Decrypt on server ---------- */
-export const decryptOnServer = async (keyId, body, apiKey) => {
-    // request JSON response with data_b64
-    const url = `${API}/secure-file/decrypt/${keyId}?json_mode=true`;
-    const res = await axios.post(url, body, {
-        headers: {'api-key': apiKey, 'Content-Type': 'application/json'},
-    });
-    return res.data;  // { data_b64, filename, sha256_b64, ... }
+/* 2. download – fetch encrypted blob + wrapped key */
+export const downloadEncrypted = async (fileId, apiKey, sessionId) => {
+    return await callSecureTransfer(
+        "download",
+        {file_id: fileId},
+        apiKey,
+        sessionId,
+    );             // { ciphertext_b64, enc_sym_key_b64, … }
+};
+
+/* 3. decrypt – plaintext + convenience save-path */
+export const decryptOnServer = async (keyId, body, apiKey, sessionId) => {
+    return await callSecureTransfer(
+        "decrypt",
+        {key_id: keyId, ...body},
+        apiKey,
+        sessionId,
+    );             // { data_b64, sha256_b64, saved_path }
 };

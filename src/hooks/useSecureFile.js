@@ -1,9 +1,13 @@
-import {useState} from 'react';
-import {uploadRaw, downloadEncrypted, decryptOnServer} from '../services/secureFileService';
-import {useMcpContext} from '../context/McpContext';
+import {useState} from "react";
+import {
+    uploadRaw,
+    downloadEncrypted,
+    decryptOnServer,
+} from "../services/secureFileService";
+import {useMcpContext} from "../context/McpContext";
 
 export const useSecureFile = () => {
-    const {apiKey} = useMcpContext();
+    const {apiKey, sessionId} = useMcpContext();      // sessionId comes from /initialize
 
     const [uploadRes, setUploadRes] = useState(null);
     const [downloadRes, setDownloadRes] = useState(null);
@@ -18,13 +22,15 @@ export const useSecureFile = () => {
         setError(null);
     };
 
+    /* ---------------- actions ---------------- */
+
     const upload = async file => {
         reset();
         setLoading(true);
         try {
-            setUploadRes(await uploadRaw(file, apiKey));
+            setUploadRes(await uploadRaw(file, apiKey, sessionId));
         } catch (e) {
-            setError(e.response?.data?.detail || 'Upload failed');
+            setError(e.message || "Upload failed");
         } finally {
             setLoading(false);
         }
@@ -35,9 +41,9 @@ export const useSecureFile = () => {
         setError(null);
         setDecryptRes(null);
         try {
-            setDownloadRes(await downloadEncrypted(fileId, apiKey));
+            setDownloadRes(await downloadEncrypted(fileId, apiKey, sessionId));
         } catch (e) {
-            setError(e.response?.data?.detail || 'Download failed');
+            setError(e.message || "Download failed");
         } finally {
             setLoading(false);
         }
@@ -47,17 +53,22 @@ export const useSecureFile = () => {
         setLoading(true);
         setError(null);
         try {
-            setDecryptRes(await decryptOnServer(keyId, body, apiKey));
+            setDecryptRes(await decryptOnServer(keyId, body, apiKey, sessionId));
         } catch (e) {
-            setError(e.response?.data?.detail || 'Decrypt failed');
+            setError(e.message || "Decrypt failed");
         } finally {
             setLoading(false);
         }
     };
 
     return {
-        uploadRes, downloadRes, decryptRes,
-        loading, error,
-        upload, download, decrypt,
+        uploadRes,
+        downloadRes,
+        decryptRes,
+        loading,
+        error,
+        upload,
+        download,
+        decrypt,
     };
 };

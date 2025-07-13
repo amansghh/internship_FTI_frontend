@@ -1,10 +1,11 @@
+// pages/SecureFilePage.jsx
 import React, {useRef, useState, useLayoutEffect} from "react";
 import "../../assets/css/SecureFile.css";
 import {useSecureFile} from "../../hooks/useSecureFile.js";
-import { Upload, Download, ShieldCheck } from 'lucide-react';
+import {Upload, Download, ShieldCheck} from "lucide-react";
 
 const b64ToUrl = (b64, mime) => {
-    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
     return URL.createObjectURL(new Blob([bytes], {type: mime}));
 };
 
@@ -30,11 +31,10 @@ export default function SecureFilePage() {
     const mirrorRef = useRef(null);
     const downloadBtnRef = useRef(null);
 
-    const start = (card) => (setBusyCard(card), true);
+    const start = card => (setBusyCard(card), true);
     const stop = () => setBusyCard(null);
 
-    const handleFileIdChange = (e) => setFileId(e.target.value);
-
+    /* ---------- dynamic width for file-id input ---------- */
     useLayoutEffect(() => {
         const input = fileInputRef.current;
         const mirror = mirrorRef.current;
@@ -45,7 +45,7 @@ export default function SecureFilePage() {
 
         const card = input.closest(".sfp-card");
         const cardW = card ? card.clientWidth : 800;
-        const gap = 8; // matches .5rem gap
+        const gap = 8;
         const btnW = btn.offsetWidth;
         const maxAllowed = cardW - btnW - gap * 2;
 
@@ -57,12 +57,12 @@ export default function SecureFilePage() {
             parseFloat(style.borderRightWidth);
 
         const desired = mirror.offsetWidth + extra + 2;
-        const finalW = Math.min(Math.max(MIN_W, desired), maxAllowed);
-        input.style.width = finalW + "px";
+        input.style.width = Math.min(Math.max(MIN_W, desired), maxAllowed) + "px";
     }, [fileId]);
 
-    const toggleField = (path) =>
-        setExpandedFields((prev) => ({...prev, [path]: !prev[path]}));
+    /* ---------- JSON pretty-print helper ---------- */
+    const toggleField = path =>
+        setExpandedFields(prev => ({...prev, [path]: !prev[path]}));
 
     const renderJSON = (data, prefix = "") =>
         Object.entries(data).map(([k, v]) => {
@@ -91,24 +91,24 @@ export default function SecureFilePage() {
             );
         });
 
+    /* ---------- UI ---------- */
     return (
         <div className="secure-file-container">
             <h2 className="sfp-title">Secure File Transfer</h2>
 
             {/* Upload */}
             <section className={`sfp-card ${busyCard === "upload" ? "busy" : ""}`}>
-                <h3><Upload size={18} style={{ marginRight: '0.5rem' }} /> Upload & Encrypt</h3>
+                <h3>
+                    <Upload size={18} style={{marginRight: "0.5rem"}}/> Upload & Encrypt
+                </h3>
                 <label className="file-label">
                     📄 Choose file
                     <input
                         className="file-input"
                         type="file"
-                        onChange={(e) => {
+                        onChange={e => {
                             const f = e.target.files[0];
-                            if (f) {
-                                start("upload");
-                                upload(f).finally(stop);
-                            }
+                            if (f) start("upload") && upload(f).finally(stop);
                         }}
                     />
                 </label>
@@ -119,7 +119,10 @@ export default function SecureFilePage() {
 
             {/* Download */}
             <section className={`sfp-card ${busyCard === "download" ? "busy" : ""}`}>
-                <h3><Download size={18} style={{ marginRight: '0.5rem' }} /> Download Encrypted</h3>
+                <h3>
+                    <Download size={18} style={{marginRight: "0.5rem"}}/> Download
+                    Encrypted
+                </h3>
 
                 <span className="input-mirror" ref={mirrorRef}/>
 
@@ -130,21 +133,15 @@ export default function SecureFilePage() {
                         className="sfp-input"
                         placeholder="file_id"
                         value={fileId}
-                        onChange={handleFileIdChange}
+                        onChange={e => setFileId(e.target.value)}
                     />
                     <button
                         ref={downloadBtnRef}
                         className="sfp-btn"
                         disabled={!!busyCard}
-                        onClick={() =>
-                            start("download") && download(fileId).finally(stop)
-                        }
+                        onClick={() => start("download") && download(fileId).finally(stop)}
                     >
-                        {busyCard === "download" ? (
-                            <span className="spinner"/>
-                        ) : (
-                            "Download"
-                        )}
+                        {busyCard === "download" ? <span className="spinner"/> : "Download"}
                     </button>
                 </div>
 
@@ -156,7 +153,11 @@ export default function SecureFilePage() {
             {/* Decrypt */}
             {downloadRes && (
                 <section className={`sfp-card ${busyCard === "decrypt" ? "busy" : ""}`}>
-                    <h3><ShieldCheck size={18} style={{ marginRight: '0.5rem' }} /> Decrypt on Server</h3>
+                    <h3>
+                        <ShieldCheck size={18} style={{marginRight: "0.5rem"}}/> Decrypt
+                        on Server
+                    </h3>
+
                     <div className="sfp-keyrow">
                         <label htmlFor="rsa-key-input">RSA key</label>
                         <input
@@ -164,28 +165,32 @@ export default function SecureFilePage() {
                             type="number"
                             className="sfp-input"
                             value={keyId}
-                            onChange={(e) => setKeyId(e.target.value)}
+                            onChange={e => setKeyId(e.target.value)}
                         />
                         <button
                             className="sfp-btn"
                             disabled={!!busyCard}
                             onClick={() =>
                                 start("decrypt") &&
-                                decrypt(keyId, {...downloadRes, filename: downloadRes.filename}).finally(
-                                    stop
-                                )
+                                decrypt(keyId, downloadRes).finally(stop)
                             }
                         >
                             {busyCard === "decrypt" ? <span className="spinner"/> : "Decrypt"}
                         </button>
                     </div>
+
                     {decryptRes && (
                         <>
-                            <div className="json-preview centered">{renderJSON(decryptRes)}</div>
+                            <div className="json-preview centered">
+                                {renderJSON(decryptRes)}
+                            </div>
                             <button
                                 className="sfp-btn save-decrypt"
                                 onClick={() => {
-                                    const url = b64ToUrl(decryptRes.data_b64, "application/pdf");
+                                    const url = b64ToUrl(
+                                        decryptRes.data_b64,
+                                        "application/pdf"
+                                    );
                                     const a = document.createElement("a");
                                     a.href = url;
                                     a.download = downloadRes.filename || "file";
