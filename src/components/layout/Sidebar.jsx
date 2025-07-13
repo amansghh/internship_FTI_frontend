@@ -21,12 +21,13 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
                     <li
                         className={activeTab === "access" ? "active" : ""}
                         onClick={() => {
-                            setActiveTab("access");
-                            setAccessOpen(prev => !prev);
+                            if (activeTab !== "access") setActiveTab("access");
+                            else setAccessOpen(prev => !prev); // toggle only when already on access panel
                         }}
                     >
                         <span className={`arrow ${accessOpen ? 'rotated' : ''}`}>▶</span> Access Panel
                     </li>
+
 
 
                     {/* Accordion content only shown when initialized */}
@@ -47,8 +48,12 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
                     >
                         Admin Panel
                     </li>
-                    <li>LLM Process (soon)</li>
-
+                    <li
+                        className={activeTab === "ollama" ? "active" : ""}
+                        onClick={() => setActiveTab("ollama")}
+                    >
+                        AI
+                    </li>
                     {/* ✅ Secure File with animated tooltip */}
                     <li
                         className={`secure-file-entry ${

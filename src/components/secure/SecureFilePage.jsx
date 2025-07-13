@@ -1,6 +1,7 @@
 import React, {useRef, useState, useLayoutEffect} from "react";
 import "../../assets/css/SecureFile.css";
 import {useSecureFile} from "../../hooks/useSecureFile.js";
+import { Upload, Download, ShieldCheck } from 'lucide-react';
 
 const b64ToUrl = (b64, mime) => {
     const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -96,7 +97,7 @@ export default function SecureFilePage() {
 
             {/* Upload */}
             <section className={`sfp-card ${busyCard === "upload" ? "busy" : ""}`}>
-                <h3>⬆️ Upload & Encrypt</h3>
+                <h3><Upload size={18} style={{ marginRight: '0.5rem' }} /> Upload & Encrypt</h3>
                 <label className="file-label">
                     📄 Choose file
                     <input
@@ -118,7 +119,7 @@ export default function SecureFilePage() {
 
             {/* Download */}
             <section className={`sfp-card ${busyCard === "download" ? "busy" : ""}`}>
-                <h3>⬇️ Download Encrypted</h3>
+                <h3><Download size={18} style={{ marginRight: '0.5rem' }} /> Download Encrypted</h3>
 
                 <span className="input-mirror" ref={mirrorRef}/>
 
@@ -155,7 +156,7 @@ export default function SecureFilePage() {
             {/* Decrypt */}
             {downloadRes && (
                 <section className={`sfp-card ${busyCard === "decrypt" ? "busy" : ""}`}>
-                    <h3>🔓 Decrypt on Server</h3>
+                    <h3><ShieldCheck size={18} style={{ marginRight: '0.5rem' }} /> Decrypt on Server</h3>
                     <div className="sfp-keyrow">
                         <label htmlFor="rsa-key-input">RSA key</label>
                         <input
