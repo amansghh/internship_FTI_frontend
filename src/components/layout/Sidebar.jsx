@@ -29,7 +29,6 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
                     </li>
 
 
-
                     {/* Accordion content only shown when initialized */}
                     {initialized && accessOpen && (
                         <ul style={{marginLeft: '16px', marginTop: '6px'}}>
@@ -73,9 +72,12 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
                         </div>
                     </li>
 
-
-
-
+                    <li
+                        className={activeTab === "sse-test" ? "active" : ""}
+                        onClick={() => setActiveTab("sse-test")}
+                    >
+                        SSE Stream
+                    </li>
                 </ul>
 
                 <div className="sidebar-section">Resources</div>

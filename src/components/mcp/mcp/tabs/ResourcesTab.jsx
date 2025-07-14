@@ -21,6 +21,9 @@ const ResourcesTab = () => {
         setSelected,
         content,
         fetchContent,
+        subscribe,
+        unsubscribe,
+        subscriptions,
     } = useResources();
 
     const [expanded, setExpanded] = useState('content');
@@ -38,6 +41,9 @@ const ResourcesTab = () => {
 
     if (loading) return <p>Loading resources...</p>;
     if (error) return <p className="error-msg">❌ {error}</p>;
+
+    const isSubscribed = selected && subscriptions.has(selected);
+
 
     return (
         <div className="resources-tab">
@@ -61,56 +67,21 @@ const ResourcesTab = () => {
                 <div className="resource-modal-overlay" onClick={() => setSelected(null)}>
                     <div className="resource-modal" onClick={e => e.stopPropagation()}>
                         <button className="close-btn" onClick={() => setSelected(null)}>×</button>
-                        <h3>{selected.replace(/^file:\/\//, '')}</h3>
+                        <div className="resource-title-row">
+                            <h3 className="resource-title">{selected.replace(/^file:\/\//, '')}</h3>
+                            <button
+                                className="fti-subscribe-btn"
+                                onClick={() => isSubscribed ? unsubscribe(selected) : subscribe(selected)}
+                            >
+                                {isSubscribed ? '🔕 Unsubscribe' : '🔔 Subscribe'}
+                            </button>
+                        </div>
 
-                        {/* ⬇️ Download Button */}
-                        <button
-                            className="download-btn"
-                            disabled={running}
-                            onClick={() => run('download_file', {uri: selected})}
-                        >
-                            {running ? 'Downloading…' : '⬇️ Download'}
-                        </button>
 
                         {runErr && (
                             <p className="error-msg" style={{marginTop: '.5rem'}}>❌ {runErr}</p>
                         )}
 
-                        {/* JSON Preview */}
-                        {prettyOutput && (
-                            <div className="runner-output json-preview centered">
-                                <SyntaxHighlighter
-                                    language="json"
-                                    style={dracula}
-                                    showLineNumbers={false}
-                                    wrapLongLines={true}
-                                    customStyle={{
-                                        background: 'transparent',
-                                        fontSize: '0.9rem',
-                                        padding: '0'
-                                    }}
-                                >
-                                    {JSON.stringify(prettyOutput, null, 2)}
-                                </SyntaxHighlighter>
-                            </div>
-                        )}
-
-                        {/* Save Button */}
-                        {output?.data && (
-                            <button
-                                className="save-btn"
-                                onClick={() => {
-                                    const url = b64ToUrl(output.data, output.mimeType);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = output.filename || 'download';
-                                    a.click();
-                                    URL.revokeObjectURL(url);
-                                }}
-                            >
-                                💾 Save {output.filename}
-                            </button>
-                        )}
 
                         {/* Content Accordion */}
                         <div className="accordion-section">
@@ -149,6 +120,51 @@ const ResourcesTab = () => {
                                     </div>
                                 </div>
                             </div>
+                        )}
+
+                        {/* ⬇️ Download Button */}
+                        <button
+                            className="download-btn"
+                            disabled={running}
+                            onClick={() => run('download_file', {uri: selected})}
+                        >
+                            {running ? 'Downloading…' : '⬇️ Download'}
+                        </button>
+
+                        {/* JSON Preview */}
+                        {prettyOutput && (
+                            <div className="runner-output json-preview centered">
+                                <SyntaxHighlighter
+                                    language="json"
+                                    style={dracula}
+                                    showLineNumbers={false}
+                                    wrapLongLines={true}
+                                    customStyle={{
+                                        background: 'transparent',
+                                        fontSize: '0.9rem',
+                                        padding: '0'
+                                    }}
+                                >
+                                    {JSON.stringify(prettyOutput, null, 2)}
+                                </SyntaxHighlighter>
+                            </div>
+                        )}
+
+                        {/* Save Button */}
+                        {output?.data && (
+                            <button
+                                className="save-btn"
+                                onClick={() => {
+                                    const url = b64ToUrl(output.data, output.mimeType);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = output.filename || 'download';
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                }}
+                            >
+                                💾 Save {output.filename}
+                            </button>
                         )}
 
                     </div>

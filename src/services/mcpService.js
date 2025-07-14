@@ -30,6 +30,22 @@ export const initializeSession = async (apiKey, fti, protocolVersion = '2025-06-
     };
 };
 
+// Generic helper for MCP JSON-RPC calls
+export async function mcpRpc({apiKey, sessionId, protocolVersion}, payload) {
+    const res = await fetch('http://localhost:8000/mcp/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'api-key': apiKey,
+            'Mcp-Session-Id': sessionId,
+            'Mcp-Protocol-Version': protocolVersion,
+        },
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`RPC ${payload.method} failed ${res.status}`);
+    return res.json();
+}
+
 
 export const sendInitializedNotification = async (apiKey, sessionId, protocolVersion = '2025-06-18') => {
     return await axios.post(

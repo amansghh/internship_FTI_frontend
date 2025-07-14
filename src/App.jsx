@@ -6,13 +6,12 @@ import AccessPanel from './components/mcp/AccessPanel.jsx';
 import Sidebar from './components/layout/Sidebar.jsx';
 import {McpProvider} from "./context/McpContext.jsx";
 import MCPPage from "./components/mcp/mcp/MCPPage.jsx";
-import {useState, useEffect} from 'react';
+import {useState} from 'react';
 import SecureFilePage from "./components/secure/SecureFilePage.jsx";
 import OllamaBridgePage from "./components/OllamaBridgePage.jsx";
+import SSETestPage from "./components/mcp/SSETestPage.jsx";
 
 function App() {
-    const [apiKey, setApiKey] = useState('');
-    const [fti, setFti] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeTab, setActiveTabState] = useState(() => {
         return sessionStorage.getItem("activeTab") || "access";
@@ -25,8 +24,9 @@ function App() {
     const renderMain = () => {
         if (activeTab === "admin") return <AdminPage/>;
         if (activeTab === "mcp") return <MCPPage/>;
-        if (activeTab === "secure-file") return <SecureFilePage />;
-        if (activeTab === "ollama") return <OllamaBridgePage />;
+        if (activeTab === "secure-file") return <SecureFilePage/>;
+        if (activeTab === "ollama") return <OllamaBridgePage/>;
+        if (activeTab === "sse-test") return <SSETestPage/>;
         return <AccessPanel/>;
     };
 

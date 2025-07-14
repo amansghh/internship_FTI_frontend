@@ -223,3 +223,35 @@
     overflow: auto;
     margin-top: 0.8rem;
 }
+
+.resource-title-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.resource-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 10px;
+    color: #333;
+}
+
+.fti-subscribe-btn {
+    background-color: #f4f4f4;
+    color: #444;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 0;
+}
+
+.fti-subscribe-btn:hover {
+    background-color: #e6e6e6;
+    border-color: #bbb;
+}
+
