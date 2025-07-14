@@ -1,3 +1,5 @@
+/* ── OllamaBridgePage & ToolsTab Styles ─────────────────────── */
+
 .bridge-container {
     padding: 1.5rem;
     display: flex;
@@ -61,7 +63,76 @@
     cursor: not-allowed;
 }
 
-/* Markdown block styling used in both ToolsTab & OllamaBridgePage */
+/* JSON preview (used in JsonBlock) */
+.json-preview {
+    background: #282a36;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-family: "Fira Code", monospace;
+    overflow-x: auto;
+    margin-top: 0.5rem;
+}
+
+/* Inline file actions (Preview / Download buttons) */
+.inline-actions {
+    margin-top: 0.5rem;
+}
+
+.inline-actions button {
+    margin-right: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid #5f259f;
+    background: #fff;
+    color: #5f259f;
+    cursor: pointer;
+}
+
+/* Modal overlay & window */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-window {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    position: relative;
+    max-width: 90%;
+    width: 500px;
+    text-align: center;
+}
+
+.modal-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.download-btn {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: #5f259f;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Markdown block styling (ToolsTab & OllamaBridgePage) */
 .tool-markdown {
     font-size: 0.95rem;
     line-height: 1.45;
@@ -71,8 +142,8 @@
     max-height: 40vh;
 }
 
-.tool-markdown h4,
-.tool-markdown h3 {
+.tool-markdown h3,
+.tool-markdown h4 {
     color: #5f259f;
     margin-top: 1rem;
 }
@@ -90,3 +161,48 @@
     font-size: 0.87em;
 }
 
+/* ── FileBlock Overrides ────────────────────────────────────── */
+
+/* Ensure FileBlock’s JSON preview uses block layout and allows wrapping */
+.file-block .json-preview {
+    display: block;
+    white-space: pre-wrap; /* wrap long lines */
+}
+
+/* Each property renders on its own flex line, with wrapping allowed */
+.file-block .json-line {
+    display: flex;
+    flex-wrap: wrap; /* allow the value to wrap onto new lines */
+    align-items: flex-start;
+    margin-bottom: 0.3rem;
+}
+
+/* Key / value coloring */
+.file-block .json-key {
+    color: #ff79c6;
+    margin-right: 0.25rem;
+}
+
+.file-block .json-value {
+    color: #f1fa8c;
+    word-break: break-all; /* break the base64 at any point */
+    flex: 1 1 auto; /* take up remaining space and wrap */
+}
+
+/* Inline toggle button styling */
+.file-block .toggle-btn {
+    flex: none; /* keep button its intrinsic size */
+    margin-left: 0.5rem;
+    white-space: nowrap; /* don’t allow the button text itself to wrap */
+    background: none;
+    border: none;
+    color: #8be9fd;
+    cursor: pointer;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.file-block .toggle-btn:hover {
+    color: #50fa7b;
+}

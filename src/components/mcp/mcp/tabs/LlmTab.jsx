@@ -1,7 +1,12 @@
-import React from 'react';
+import React from "react";
+import OllamaBridgePage from "../../../OllamaBridgePage.jsx";
 
-const LLMTab = () => {
-    return <div>LLM tab content will go here.</div>;
-};
+function LLMTab() {
+    return (
+        <div style={{height: "100%", display: "flex", flexDirection: "column"}}>
+            <OllamaBridgePage/>
+        </div>
+    );
+}
 
 export default LLMTab;

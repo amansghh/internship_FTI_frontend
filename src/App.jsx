@@ -8,7 +8,6 @@ import {McpProvider} from "./context/McpContext.jsx";
 import MCPPage from "./components/mcp/mcp/MCPPage.jsx";
 import {useState} from 'react';
 import SecureFilePage from "./components/secure/SecureFilePage.jsx";
-import OllamaBridgePage from "./components/OllamaBridgePage.jsx";
 import SSETestPage from "./components/mcp/SSETestPage.jsx";
 
 function App() {
@@ -25,7 +24,6 @@ function App() {
         if (activeTab === "admin") return <AdminPage/>;
         if (activeTab === "mcp") return <MCPPage/>;
         if (activeTab === "secure-file") return <SecureFilePage/>;
-        if (activeTab === "ollama") return <OllamaBridgePage/>;
         if (activeTab === "sse-test") return <SSETestPage/>;
         return <AccessPanel/>;
     };
