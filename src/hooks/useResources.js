@@ -25,13 +25,15 @@ export const useResources = () => {
 
     const fetchContent = async (uri) => {
         try {
+            setError(null);  // reset
             setContent({text: '', mimeType: '', metadata: ''});
             const data = await readResource(uri, apiKey, sessionId, protocolVersion);
             setContent(data);
         } catch (e) {
-            setError('Failed to read resource');
+            setError(e.message || 'Failed to read resource');
         }
     };
+
     useEffect(() => {
         const load = async () => {
             setLoading(true);

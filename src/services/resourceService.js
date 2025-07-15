@@ -24,7 +24,7 @@ export const listResources = async (apiKey, sessionId, protocolVersion) => {
 
 export const readResource = async (uri, apiKey, sessionId, protocolVersion) => {
     const res = await axios.post(
-        'http://localhost:8000/mcp',
+        MCP_URL,
         {
             jsonrpc: '2.0',
             id: 2,
@@ -39,6 +39,10 @@ export const readResource = async (uri, apiKey, sessionId, protocolVersion) => {
             },
         }
     );
+
+    if (res.data.error) {
+        throw new Error(res.data.error.message);
+    }
 
     const result = res.data.result;
 
