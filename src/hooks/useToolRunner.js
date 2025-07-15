@@ -25,5 +25,5 @@ export const useToolRunner = () => {
         [apiKey, sessionId, protocolVersion]
     );
 
-    return {run, running, output, error};
+    return {run, running, output, error, setOutput};
 };

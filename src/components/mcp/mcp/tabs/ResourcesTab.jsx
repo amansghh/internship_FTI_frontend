@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useResources} from '../../../../hooks/useResources.js';
 import {useToolRunner} from '../../../../hooks/useToolRunner.js';
 import '../../../../assets/css/ResourcesTab.css';
@@ -28,8 +28,12 @@ const ResourcesTab = () => {
 
     const [expanded, setExpanded] = useState('content');
     const toggle = section => setExpanded(expanded === section ? null : section);
+    const { run, running, output, error: runErr, setOutput } = useToolRunner();
 
-    const {run, running, output, error: runErr} = useToolRunner();
+    // Clear output when switching resources
+    useEffect(() => {
+        setOutput(null);
+    }, [selected]);
 
     const prettyOutput = output?.data
         ? {
@@ -56,6 +60,7 @@ const ResourcesTab = () => {
                             setSelected(r.uri);
                             fetchContent(r.uri);
                             setExpanded('content');
+                            setOutput(null); // 🧹 Clear previous tool output
                         }}
                     >
                         {r.uri.replace(/^file:\/\//, '')}
