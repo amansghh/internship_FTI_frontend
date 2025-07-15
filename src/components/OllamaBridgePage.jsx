@@ -1,8 +1,7 @@
-// src/pages/OllamaBridgePage.jsx
 import React, {useState} from "react";
 import "../assets/css/OllamaBridge.css";
 import "../assets/css/ToolsTab.css";
-import "../assets/css/SecureFile.css";        // for the json-line / toggle-btn styles
+import "../assets/css/SecureFile.css";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {Prism as Syntax} from "react-syntax-highlighter";
@@ -63,9 +62,7 @@ const FileBlock = ({file}) => {
 
     return (
         <div className="file-block">
-            <div className="json-preview centered">
-                {renderFileJSON()}
-            </div>
+            <div className="json-preview centered">{renderFileJSON()}</div>
 
             <div className="inline-actions">
                 <button onClick={doPreview}>Preview</button>
@@ -75,11 +72,14 @@ const FileBlock = ({file}) => {
             {previewing && (
                 <div className="modal-overlay" onClick={() => setPreviewing(false)}>
                     <div className="modal-window" onClick={(e) => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setPreviewing(false)}>
+                        <button
+                            className="modal-close"
+                            onClick={() => setPreviewing(false)}
+                        >
                             ×
                         </button>
 
-                        {mimeType.startsWith("image/") ? (
+                        {mimeType.startsWith("image/") && (
                             <img
                                 src={URL.createObjectURL(
                                     new Blob(
@@ -90,7 +90,9 @@ const FileBlock = ({file}) => {
                                 alt={filename}
                                 style={{maxWidth: "100%"}}
                             />
-                        ) : mimeType === "application/pdf" ? (
+                        )}
+
+                        {mimeType === "application/pdf" && (
                             <iframe
                                 src={URL.createObjectURL(
                                     new Blob(
@@ -102,9 +104,22 @@ const FileBlock = ({file}) => {
                                 height="500px"
                                 style={{border: "none"}}
                             />
-                        ) : (
-                            <p>Preview not supported for {mimeType}</p>
                         )}
+
+                        {mimeType.startsWith("text/") && (
+                            <pre className="text-preview">
+                {new TextDecoder().decode(
+                    Uint8Array.from(atob(rawData), (c) => c.charCodeAt(0))
+                )}
+              </pre>
+                        )}
+
+                        {/* fallback */}
+                        {!mimeType.startsWith("image/") &&
+                            mimeType !== "application/pdf" &&
+                            !mimeType.startsWith("text/") && (
+                                <p>Preview not supported for {mimeType}</p>
+                            )}
 
                         <button className="download-btn" onClick={doDownload}>
                             ⬇ Download

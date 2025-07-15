@@ -59,8 +59,33 @@ function fixArgs(tool, args) {
         args[missing[0]] = args[extra[0]];
         delete args[extra[0]];
     }
+
+    // 🧠 Normalize path for `download_file` like resolve_path() in backend
+    if (tool === "download_file" && typeof args.uri === "string") {
+        let raw = args.uri.trim();
+
+        // Strip file:// prefix and decode
+        if (raw.startsWith("file://")) {
+            try {
+                raw = decodeURIComponent(raw.replace("file://", "")).replace(/^\/+/, "");
+            } catch {
+                // fallback if decodeURIComponent fails
+                raw = raw.replace("file://", "").replace(/^\/+/, "");
+            }
+        }
+
+        // Strip absolute mobile/OS paths → keep only the filename
+        if (raw.includes("/")) {
+            raw = raw.split("/").pop();
+        }
+
+        // Final filename used in MCP call
+        args.uri = raw;
+    }
+
     return args;
 }
+
 
 /* ─────────────────── MCP bootstrap ──────────────────────────────── */
 async function initSession() {
