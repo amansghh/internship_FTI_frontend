@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const MCP_URL = 'http://localhost:8000/mcp';
+const MCP_URL = import.meta.env.VITE_BACKEND_URL + '/mcp';
 
 export const initializeSession = async (apiKey, fti, protocolVersion = '2025-06-18') => {
     const res = await axios.post(
-        'http://localhost:8000/mcp',
+        MCP_URL,
         {
             jsonrpc: '2.0',
             id: 1,
@@ -32,7 +32,7 @@ export const initializeSession = async (apiKey, fti, protocolVersion = '2025-06-
 
 // Generic helper for MCP JSON-RPC calls
 export async function mcpRpc({apiKey, sessionId, protocolVersion}, payload) {
-    const res = await fetch('http://localhost:8000/mcp/', {
+    const res = await fetch(MCP_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

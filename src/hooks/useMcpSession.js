@@ -1,6 +1,7 @@
 import {useMcpContext} from '../context/McpContext.jsx';
 import {initializeSession as apiInit, sendInitializedNotification as apiNotify} from '../services/mcpService';
 import {toast} from 'react-toastify';
+import {useEffect} from "react";
 
 export const useMcpSession = () => {
     const {
@@ -12,6 +13,13 @@ export const useMcpSession = () => {
         serverResponse, setServerResponse,
         resetSession
     } = useMcpContext();
+
+    // Log once when this hook is first used
+    useEffect(() => {
+        console.log(
+            `⚙️ [useSecureTransfer] MODE=${import.meta.env.MODE}  BACKEND=${import.meta.env.VITE_BACKEND_URL}`
+        );
+    }, []);
 
     const initializeSession = async () => {
         try {

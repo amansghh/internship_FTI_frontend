@@ -11,6 +11,13 @@ export const McpProvider = ({children}) => {
     const [serverResponse, setServerResponse] = useState(null);
     const [hydrated, setHydrated] = useState(false);
 
+    useEffect(() => {
+        // Log the env mode and backend URL once on startup
+        console.log(
+            `⚙️ MODE=${import.meta.env.MODE}  VITE_ROLE=${import.meta.env.VITE_ROLE}  BACKEND=${import.meta.env.VITE_BACKEND_URL}`
+        );
+    })
+
     const resetSession = () => {
         setApiKey('');
         setFti(false);
@@ -20,6 +27,7 @@ export const McpProvider = ({children}) => {
         setServerResponse(null);
         sessionStorage.removeItem('mcp-session');
     };
+
 
 
     // Hydrate from sessionStorage once on mount

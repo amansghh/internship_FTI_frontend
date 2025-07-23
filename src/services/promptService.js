@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const MCP_URL = 'http://localhost:8000/mcp';
-
+const MCP_URL = import.meta.env.VITE_BACKEND_URL + '/mcp';
 export const listPrompts = async (apiKey, sessionId, protocolVersion) => {
     const res = await axios.post(
         MCP_URL,

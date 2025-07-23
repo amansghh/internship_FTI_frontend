@@ -8,6 +8,13 @@ export const useTools = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Log once when this hook is first used
+    useEffect(() => {
+        console.log(
+            `⚙️ [useSecureTransfer] MODE=${import.meta.env.MODE}  BACKEND=${import.meta.env.VITE_BACKEND_URL}`
+        );
+    }, []);
+
     useEffect(() => {
         const fetch = async () => {
             try {

@@ -73,6 +73,13 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
                     >
                         SSE Stream
                     </li>
+                    <li
+                        className={activeTab === "transfer-demo" ? "active" : ""}
+                        onClick={() => setActiveTab("transfer-demo")}
+                    >
+                        Transfer Demo
+                    </li>
+
                 </ul>
 
                 <div className="sidebar-section">Resources</div>

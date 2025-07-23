@@ -3,8 +3,7 @@ import axios from "axios";
 import {v4 as uuidv4} from "uuid";
 
 // MCP entry-point (FastAPI listens here)
-const MCP_ENDPOINT = "http://localhost:8000/mcp";
-
+const MCP_URL = import.meta.env.VITE_BACKEND_URL + '/mcp';
 /**
  * Low-level helper to invoke the secure_transfer tool.
  *

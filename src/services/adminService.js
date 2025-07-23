@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8000/admin';
-
+const MCP_URL = import.meta.env.VITE_BACKEND_URL + '/admin';
 export const createApiKey = (adminKey, {role, owner, expires, tier}) =>
     axios.post(
         `http://localhost:8000/admin/keys/create`,

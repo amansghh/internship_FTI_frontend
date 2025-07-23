@@ -2,7 +2,7 @@ import axios from "axios";
 import {v4 as uuidv4} from "uuid";
 
 /* ── CONFIG ────────────────────────────────────────────────────────── */
-const MCP_URL = "http://localhost:8000/mcp";
+const MCP_URL = import.meta.env.VITE_BACKEND_URL + '/mcp';
 const OLLAMA_EP = "http://localhost:11434/v1/chat/completions";
 const API_KEY = "8QC61ErsDdHCMEo7b8aZD8UqdzZ_pXE5GsQkv8hywzw";
 const MODEL = "hhao/qwen2.5-coder-tools:1.5b";
