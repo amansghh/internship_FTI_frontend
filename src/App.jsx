@@ -7,7 +7,6 @@ import Sidebar from './components/layout/Sidebar.jsx';
 import {McpProvider} from "./context/McpContext.jsx";
 import MCPPage from "./components/mcp/mcp/MCPPage.jsx";
 import {useState} from 'react';
-import SecureFilePage from "./components/secure/SecureFilePage.jsx";
 import SSETestPage from "./components/mcp/SSETestPage.jsx";
 import TransferDemoPage from "./components/secure/TransferDemoPage.jsx";
 
@@ -24,9 +23,8 @@ function App() {
     const renderMain = () => {
         if (activeTab === "admin") return <AdminPage/>;
         if (activeTab === "mcp") return <MCPPage/>;
-        if (activeTab === "secure-file") return <SecureFilePage/>;
+        if (activeTab === "secure-file") return <TransferDemoPage/>;
         if (activeTab === "sse-test") return <SSETestPage/>;
-        if (activeTab === "transfer-demo") return <TransferDemoPage/>;
         return <AccessPanel/>;
     };
 

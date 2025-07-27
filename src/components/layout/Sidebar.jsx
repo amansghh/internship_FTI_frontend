@@ -58,7 +58,7 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
                         onClick={() => ftiEnabled && setActiveTab("secure-file")}
                     >
                         <div className="tooltip-wrapper">
-                            Secure File
+                            Secure File Transfer
                             {!ftiEnabled && (
                                 <div className="custom-tooltip">
                                     🔒 Requires FTI mode to be initialized in Access Panel
@@ -73,13 +73,6 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
                     >
                         SSE Stream
                     </li>
-                    <li
-                        className={activeTab === "transfer-demo" ? "active" : ""}
-                        onClick={() => setActiveTab("transfer-demo")}
-                    >
-                        Transfer Demo
-                    </li>
-
                 </ul>
 
                 <div className="sidebar-section">Resources</div>

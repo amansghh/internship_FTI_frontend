@@ -64,3 +64,16 @@ export const sendInitializedNotification = async (apiKey, sessionId, protocolVer
         }
     );
 };
+
+export const deleteSession = async (apiKey, sessionId) => {
+    return axios.delete(
+        MCP_URL,
+        {
+            headers: {
+                'api-key': apiKey,
+                'Mcp-Session-Id': sessionId,
+            },
+        },
+    );
+};
+

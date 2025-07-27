@@ -1,5 +1,9 @@
 import {useMcpContext} from '../context/McpContext.jsx';
-import {initializeSession as apiInit, sendInitializedNotification as apiNotify} from '../services/mcpService';
+import {
+    initializeSession as apiInit,
+    sendInitializedNotification as apiNotify,
+    deleteSession as apiDeleteSession,
+} from '../services/mcpService';
 import {toast} from 'react-toastify';
 import {useEffect} from "react";
 
@@ -45,6 +49,24 @@ export const useMcpSession = () => {
         }
     };
 
+    // Fully tear-down an MCP session:
+    // 1. Ask the server to delete it.
+    // Flush React-state via context’s resetSession().
+    const deleteAndResetSession = async () => {
+        try {
+            if (sessionId) {
+                await apiDeleteSession(apiKey, sessionId);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.detail || 'Failed to delete session');
+            // fall through – even if server delete fails we still clear UI state
+        } finally {
+            resetSession();               // context helper you already expose
+            toast.info('Session reset');
+        }
+    };
+
     return {
         apiKey,
         setApiKey,
@@ -57,6 +79,6 @@ export const useMcpSession = () => {
         initializeSession,
         sendInitialized,
         serverResponse,
-        resetSession
+        resetSession: deleteAndResetSession,
     };
 };

@@ -1,4 +1,3 @@
-// src/hooks/useSecureTransfer.js
 import {useState, useCallback} from "react";
 import {useMcpContext} from "../context/McpContext";
 import {

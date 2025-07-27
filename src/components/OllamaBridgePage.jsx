@@ -8,74 +8,57 @@ import {Prism as Syntax} from "react-syntax-highlighter";
 import {dracula} from "react-syntax-highlighter/dist/esm/styles/prism";
 import {ollamaBridgeService} from "../services/ollamaBridgeService";
 
-/* ── File preview / Base64 toggle / Download ────────────────── */
+/* ── File preview component (unchanged) ─────────────────────────────── */
 const FileBlock = ({file}) => {
     const [expanded, setExpanded] = useState(false);
     const [previewing, setPreviewing] = useState(false);
     const {filename, mimeType, size, rawData} = file;
 
     const toggle = () => setExpanded((v) => !v);
-    const displayData = expanded ? rawData : `${rawData.slice(0, 60)}…`;
-
-    const doPreview = () => setPreviewing(true);
-    const doDownload = () => {
+    const download = () => {
         const bytes = Uint8Array.from(atob(rawData), (c) => c.charCodeAt(0));
         const blob = new Blob([bytes], {type: mimeType});
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
+        const a = Object.assign(document.createElement("a"), {href: url, download: filename});
         a.click();
         URL.revokeObjectURL(url);
     };
 
-    const renderFileJSON = () => {
-        const entries = [
-            ["filename", filename],
-            ["mimeType", mimeType],
-            ["size", size],
-            ["data", displayData],
-        ];
-        return entries.map(([key, val]) => {
-            if (key === "data") {
-                return (
-                    <div key={key} className="json-line">
-                        <span className="json-key">"{key}":</span>{" "}
-                        <span className="json-value">"{val}"</span>
-                        <button className="toggle-btn" onClick={toggle}>
-                            [{expanded ? "Hide" : "Show full"}]
-                        </button>
-                    </div>
-                );
-            }
-            const isString = typeof val === "string";
-            return (
-                <div key={key} className="json-line">
-                    <span className="json-key">"{key}":</span>{" "}
-                    <span className="json-value">
-            {isString ? `"${val}"` : val}
-          </span>
-                </div>
-            );
-        });
-    };
+    const displayData = expanded ? rawData : rawData.slice(0, 60) + "…";
+    const jsonLines = [
+        ["filename", filename],
+        ["mimeType", mimeType],
+        ["size", size],
+        ["data", displayData],
+    ];
 
     return (
         <div className="file-block">
-            <div className="json-preview centered">{renderFileJSON()}</div>
+            <div className="json-preview centered">
+                {jsonLines.map(([k, v]) => (
+                    <div key={k} className="json-line">
+                        <span className="json-key">"{k}":</span>{" "}
+                        <span className="json-value">
+              {k === "data" ? `"${v}"` : typeof v === "string" ? `"${v}"` : v}
+            </span>
+                        {k === "data" && (
+                            <button className="toggle-btn" onClick={toggle}>
+                                [{expanded ? "Hide" : "Show full"}]
+                            </button>
+                        )}
+                    </div>
+                ))}
+            </div>
 
             <div className="inline-actions">
-                <button onClick={doPreview}>Preview</button>
-                <button onClick={doDownload}>Download</button>
+                <button onClick={() => setPreviewing(true)}>Preview</button>
+                <button onClick={download}>Download</button>
             </div>
 
             {previewing && (
                 <div className="modal-overlay" onClick={() => setPreviewing(false)}>
                     <div className="modal-window" onClick={(e) => e.stopPropagation()}>
-                        <button
-                            className="modal-close"
-                            onClick={() => setPreviewing(false)}
-                        >
+                        <button className="modal-close" onClick={() => setPreviewing(false)}>
                             ×
                         </button>
 
@@ -101,7 +84,7 @@ const FileBlock = ({file}) => {
                                     )
                                 )}
                                 width="100%"
-                                height="500px"
+                                height="500"
                                 style={{border: "none"}}
                             />
                         )}
@@ -114,14 +97,13 @@ const FileBlock = ({file}) => {
               </pre>
                         )}
 
-                        {/* fallback */}
-                        {!mimeType.startsWith("image/") &&
-                            mimeType !== "application/pdf" &&
-                            !mimeType.startsWith("text/") && (
+                        {!mimeType.startsWith("image/")
+                            && mimeType !== "application/pdf"
+                            && !mimeType.startsWith("text/") && (
                                 <p>Preview not supported for {mimeType}</p>
                             )}
 
-                        <button className="download-btn" onClick={doDownload}>
+                        <button className="download-btn" onClick={download}>
                             ⬇ Download
                         </button>
                     </div>
@@ -131,7 +113,7 @@ const FileBlock = ({file}) => {
     );
 };
 
-/* ── memoised JSON pretty-printer (shared look-&-feel) ───────── */
+/* ── Pretty JSON viewer (unchanged) ─────────────────────────────────── */
 const JsonBlock = React.memo(({obj}) => (
     <div className="json-preview centered">
         <Syntax
@@ -146,47 +128,80 @@ const JsonBlock = React.memo(({obj}) => (
     </div>
 ));
 
+/* ── MAIN COMPONENT ─────────────────────────────────────────────────-- */
 export default function OllamaBridgePage() {
     const [userInput, setUserInput] = useState("");
     const [chatLog, setChatLog] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selected, setSelected] = useState(null);
+    const [awaitingDesc, setAwaitingDesc] = useState(null); // ← filename waiting for description
+
+    /* helper to push new chat message */
+    const push = (msg) => setChatLog((c) => [...c, msg]);
 
     const submit = async () => {
         if (!userInput.trim()) return;
         const prompt = userInput.trim();
 
-        setChatLog((c) => [...c, {role: "user", text: prompt}]);
+        /* 1 ▸ send user message */
+        push({role: "user", text: prompt});
         setUserInput("");
         setLoading(true);
 
         try {
+            /* 2 ▸ if we’re waiting for a description → call secure_transfer */
+            if (awaitingDesc) {
+                const result = await ollamaBridgeService.run("secure_transfer", {
+                    action: "upload",
+                    filename: awaitingDesc,
+                    description: prompt,
+                });
+                push({
+                    role: "assistant",
+                    text: `🔧 Called secure_transfer (upload '${awaitingDesc}')`,
+                    result,
+                });
+                setAwaitingDesc(null);
+                setLoading(false);
+                return;
+            }
+
+            /* 3 ▸ normal flow via service */
             const out = await ollamaBridgeService.call(prompt);
 
-            if (out.tools) {
-                setChatLog((c) => [...c, {role: "assistant", tools: out.tools}]);
+            if (out.askDesc) {
+                /* backend asked for a description – store state & prompt user */
+                setAwaitingDesc(out.file);
+                push({
+                    role: "assistant",
+                    text: `🤖 Please provide a short description for '${out.file}'.`,
+                });
+            } else if (out.tools) {
+                push({role: "assistant", tools: out.tools});
+            } else if (out.prompts) {
+                push({role: "assistant", prompts: out.prompts});
             } else if (out.tool) {
                 let msg = `🔧 Called ${out.tool}`;
                 let result = out.result;
 
                 if (out.tool === "download_file" && result?.data) {
-                    // stash rawData for FileBlock and redact
                     const {filename, mimeType, size, data: rawData} = result;
                     msg += `\n💾 File ready: ${filename}`;
                     result = {filename, mimeType, size, rawData};
                 }
-
-                setChatLog((c) => [...c, {role: "assistant", text: msg, result}]);
+                push({role: "assistant", text: msg, result});
             } else {
-                setChatLog((c) => [...c, {role: "assistant", text: out.reply}]);
+                push({role: "assistant", text: out.reply});
             }
         } catch (err) {
-            setChatLog((c) => [...c, {role: "assistant", text: `❌ ${err.message}`}]);
+            push({role: "assistant", text: `❌ ${err.message}`});
+            setAwaitingDesc(null);
         } finally {
             setLoading(false);
         }
     };
 
+    /* ── RENDER ─────────────────────────────────────────────────────── */
     return (
         <div className="bridge-container">
             <h2 className="bridge-title">Ollama ⇆ MCP</h2>
@@ -211,6 +226,20 @@ export default function OllamaBridgePage() {
                             </div>
                         )}
 
+                        {m.prompts && (
+                            <div className="tool-grid" style={{marginTop: "0.5rem"}}>
+                                {m.prompts.map((p) => (
+                                    <div
+                                        key={p.name}
+                                        className="tool-card"
+                                        onClick={() => setSelected(p)}
+                                    >
+                                        <h4>{p.name}</h4>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {m.result &&
                             (m.result.rawData ? (
                                 <FileBlock file={m.result}/>
@@ -221,14 +250,21 @@ export default function OllamaBridgePage() {
                 ))}
             </div>
 
-            {/* tool-detail modal (pixel-perfect match with ToolsTab) */}
+            {/* detail modal for tool or prompt */}
             {selected && (
-                <div className="tool-detail-overlay" onClick={() => setSelected(null)}>
-                    <div className="tool-detail" onClick={(e) => e.stopPropagation()}>
+                <div
+                    className="tool-detail-overlay"
+                    onClick={() => setSelected(null)}
+                >
+                    <div
+                        className="tool-detail"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <button className="close-btn" onClick={() => setSelected(null)}>
                             ×
                         </button>
                         <h3>{selected.name}</h3>
+
                         <div className="tool-markdown">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
@@ -255,13 +291,16 @@ export default function OllamaBridgePage() {
                                 {selected.description}
                             </ReactMarkdown>
                         </div>
+
                         <div className="tool-detail-body">
                             <div className="tool-info">
                                 <div className="tool-meta">
-                                    <p>
-                                        <strong>Binary:</strong>{" "}
-                                        {selected.binary ? "✅ Yes" : "❌ No"}
-                                    </p>
+                                    {"binary" in selected && (
+                                        <p>
+                                            <strong>Binary:</strong>{" "}
+                                            {selected.binary ? "✅ Yes" : "❌ No"}
+                                        </p>
+                                    )}
                                     {"fti_only" in selected && (
                                         <p>
                                             <strong>FTI Only:</strong>{" "}
@@ -269,12 +308,19 @@ export default function OllamaBridgePage() {
                                         </p>
                                     )}
                                 </div>
+
                                 <div className="tool-schema">
                                     <h4>Input Schema</h4>
                                     {selected.inputSchema && Object.keys(selected.inputSchema).length ? (
                                         <JsonBlock obj={selected.inputSchema}/>
                                     ) : selected.parameters && Object.keys(selected.parameters).length ? (
                                         <JsonBlock obj={selected.parameters}/>
+                                    ) : selected.arguments && selected.arguments.length ? (
+                                        <JsonBlock
+                                            obj={Object.fromEntries(
+                                                selected.arguments.map((a) => [a.name, "string"])
+                                            )}
+                                        />
                                     ) : (
                                         <p className="schema-placeholder">No input schema.</p>
                                     )}
@@ -285,6 +331,7 @@ export default function OllamaBridgePage() {
                 </div>
             )}
 
+            {/* input bar */}
             <div className="chat-input-row">
                 <input
                     className="chat-input"
@@ -294,7 +341,7 @@ export default function OllamaBridgePage() {
                     onKeyDown={(e) => e.key === "Enter" && submit()}
                 />
                 <button className="chat-send-btn" onClick={submit} disabled={loading}>
-                    {loading ? "Thinking…" : "Send"}
+                    {loading ? "Thinking…" : awaitingDesc ? "Send desc" : "Send"}
                 </button>
             </div>
         </div>

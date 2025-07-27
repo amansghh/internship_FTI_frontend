@@ -1,4 +1,3 @@
-// src/pages/TransferDemoPage.jsx
 import React, {useState, useEffect, useMemo} from "react";
 import {Copy, UploadCloud, Download, Info, X} from "lucide-react";
 

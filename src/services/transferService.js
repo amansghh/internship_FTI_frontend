@@ -48,7 +48,7 @@ export const listFilesFromProvider = async ctx => {
         body: JSON.stringify({
             remote_host: "backend-provider",
             remote_port: 8000,
-            remote_api_key: "bc2lepTJrzlJ2m7r2oOPgrDkd28WBxY1MgWmfLSNCxs"
+            remote_api_key: "GljLPrzMYT5V5X5-6HmiQKHEcZsk3qzae9bQmZhIXTE"
         })
     });
     if (!res.ok) throw new Error(await res.text());
@@ -67,7 +67,7 @@ export const downloadFile = (fileId, ctx) => callMcp({
             file_id: fileId,
             remote_host: "backend-provider",
             remote_port: 8000,
-            remote_api_key: "bc2lepTJrzlJ2m7r2oOPgrDkd28WBxY1MgWmfLSNCxs"
+            remote_api_key: "GljLPrzMYT5V5X5-6HmiQKHEcZsk3qzae9bQmZhIXTE"
         }
     }
 }, ctx);
@@ -81,7 +81,7 @@ export const decryptFile = (enc, ctx) => callMcp({
         name: "secure_transfer",
         arguments: {
             action: "decrypt",
-            key_id: 2,           // adapt if keys are dynamic
+            key_id: 1,           // adapt if keys are dynamic
             ...enc
         }
     }
