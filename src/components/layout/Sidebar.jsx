@@ -77,9 +77,12 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
 
                 <div className="sidebar-section">Resources</div>
                 <ul>
-                    <li>Documentation</li>
-                    <li>Support</li>
-                    <li>Release Notes</li>
+                    <li
+                        className={activeTab === "docs" ? "active" : ""}
+                        onClick={() => setActiveTab("docs")}
+                    >
+                        Documentation
+                    </li>
                 </ul>
             </nav>
         </aside>
