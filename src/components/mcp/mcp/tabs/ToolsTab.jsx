@@ -1,100 +1,78 @@
-import React, {useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {useTools} from "../../../../hooks/useTools.js";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
-import {dracula} from "react-syntax-highlighter/dist/esm/styles/prism";
 import "../../../../assets/css/ToolsTab.css";
+import {useRateLimit} from "../../../../context/RateLimitContext.jsx";
 
-/* — helper for the schema “pretty-print” code box — */
-const JsonBlock = ({obj}) => (
-    <div className="json-preview centered">
-        <SyntaxHighlighter
-            language="json"
-            style={dracula}
-            wrapLongLines
-            showLineNumbers={false}
-            customStyle={{background: "transparent", fontSize: "0.9rem", padding: 0}}
-        >
-            {JSON.stringify(obj, null, 2)}
-        </SyntaxHighlighter>
-    </div>
-);
+function SkeletonGrid({count = 6}) {
+    return (
+        <>
+            {Array.from({length: count}).map((_, i) => (
+                <div key={i} className="tool-card skeleton disabled">
+                    <div className="skeleton-bar"/>
+                </div>
+            ))}
+        </>
+    );
+}
 
-export default function ToolsTab() {
-    const {tools, loading, error} = useTools();
+export default function ToolsTab({setRefetch}) {
+    const {tools, loading, fetching, errorInfo, showEmpty, refetch} = useTools();
+    const {rate} = useRateLimit();
     const [selected, setSelected] = useState(null);
 
-    if (loading) return <p>Loading tools…</p>;
-    if (error) return <p style={{color: "red"}}>❌ {error}</p>;
+    // Cooldown state: only disable clicks while we're still counting down
+    const isCooling = useMemo(
+        () => Boolean(rate?.until && Date.now() < rate.until),
+        [rate?.until]
+    );
+
+    useEffect(() => {
+        setRefetch?.(refetch);
+        return () => setRefetch?.(null);
+    }, [refetch, setRefetch]);
 
     return (
         <div className="tools-tab">
+            {loading && <p>Loading tools…</p>}
 
-            {/* ─── grid of clickable cards ────────────────────────────── */}
+            {/* Non-429 local errors only */}
+            {!rate && errorInfo && (
+                <div style={{color: "red", marginBottom: 12}}>❌ {errorInfo.message}</div>
+            )}
+
             <div className="tool-grid">
-                {tools.map(t => (
-                    <div key={t.name}
-                         className="tool-card"
-                         onClick={() => setSelected(t)}>
-                        <h4>{t.name}</h4>
+                {/* If we truly have no tools (first successful fetch was empty) show an empty state.
+            Otherwise, render cached/last-good or skeletons while we wait. */}
+                {showEmpty && !loading ? (
+                    <div className="tool-empty">
+                        {fetching ? "Refreshing…" : "No tools available yet."}
                     </div>
-                ))}
+                ) : tools.length > 0 ? (
+                    tools.map((t) => (
+                        <div
+                            key={t.name}
+                            className={`tool-card ${isCooling ? 'disabled' : ''}`}
+                            onClick={() => !isCooling && setSelected(t)}
+                            title={isCooling ? 'Rate limited — wait to interact' : t.name}
+                        >
+                            <h4>{t.name}</h4>
+                        </div>
+                    ))
+                ) : (
+                    // No data yet (first call 429, etc.) → render skeletons instead of a blank box
+                    <SkeletonGrid/>
+                )}
             </div>
 
-            {/* ─── modal ──────────────────────────────────────────────── */}
             {selected && (
                 <div className="tool-detail-overlay" onClick={() => setSelected(null)}>
-                    <div className="tool-detail" onClick={e => e.stopPropagation()}>
-
+                    <div className="tool-detail" onClick={(e) => e.stopPropagation()}>
                         <button className="close-btn" onClick={() => setSelected(null)}>×</button>
-
                         <h3>{selected.name}</h3>
-
-                        {/* 💄  render Markdown description  */}
-                        <div className="tool-markdown">
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                children={selected.description}
-                                components={{
-                                    code: ({node, inline, className, children, ...props}) =>
-                                        inline ? (
-                                            <code className={className} {...props}>{children}</code>
-                                        ) : (
-                                            <SyntaxHighlighter
-                                                style={dracula}
-                                                language={(className || "").replace("language-", "")}
-                                                PreTag="div"
-                                                wrapLongLines
-                                                customStyle={{background: "#282a36", borderRadius: 6}}
-                                                {...props}
-                                            >
-                                                {String(children).replace(/\n$/, "")}
-                                            </SyntaxHighlighter>
-                                        )
-                                }}
-                            />
-                        </div>
-
-                        {/* ── meta + schema ─────────────────────────────── */}
-                        <div className="tool-detail-body">
-
-                            <div className="tool-info">
-
-                                <div className="tool-meta">
-                                    <p><strong>Binary:</strong> {selected.binary ? "✅ Yes" : "❌ No"}</p>
-                                    {"fti_only" in selected &&
-                                        <p><strong>FTI Only:</strong> {selected.fti_only ? "✅ Yes" : "❌ No"}</p>}
-                                </div>
-
-                                <div className="tool-schema">
-                                    <h4>Input Schema</h4>
-                                    {selected.inputSchema && Object.keys(selected.inputSchema).length
-                                        ? <JsonBlock obj={selected.inputSchema}/>
-                                        : <p className="schema-placeholder">No input schema.</p>}
-                                </div>
-
-                            </div>
+                        <p style={{opacity: .85}}>{selected.description}</p>
+                        <div style={{marginTop: 8, fontSize: 12, opacity: .7}}>
+                            Binary: {selected.binary ? "Yes" : "No"}
+                            {"fti_only" in selected && <> • FTI Only: {selected.fti_only ? "Yes" : "No"}</>}
                         </div>
                     </div>
                 </div>

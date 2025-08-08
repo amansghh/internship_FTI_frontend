@@ -16,7 +16,7 @@ const AuthBox = ({onSubmit}) => {
         setChecking(true);
 
         try {
-            const res = await axios.get('http://localhost:8000/admin/check', {
+            const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/admin/health`, {
                 headers: {'api-key': adminKey}
             });
 

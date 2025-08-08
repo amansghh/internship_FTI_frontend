@@ -3,7 +3,7 @@ import axios from 'axios';
 const MCP_URL = import.meta.env.VITE_BACKEND_URL + '/admin';
 export const createApiKey = (adminKey, {role, owner, expires, tier}) =>
     axios.post(
-        `http://localhost:8000/admin/keys/create`,
+        `${MCP_URL}/keys`,
         null, // no body
         {
             headers: {'api-key': adminKey},
@@ -17,22 +17,21 @@ export const createApiKey = (adminKey, {role, owner, expires, tier}) =>
     );
 
 export const listApiKeys = (adminKey) =>
-    axios.get(`${BASE_URL}/keys/list`, {
+    axios.get(`${MCP_URL}/keys`, {
         headers: {'api-key': adminKey},
     });
 
 export const deactivateApiKey = (adminKey, apiKey) =>
-    axios.post(`${BASE_URL}/keys/deactivate`, null, {
-        headers: {'api-key': adminKey},
-        params: {target_key: apiKey}
+    axios.delete(`${MCP_URL}/keys/${apiKey}`, {
+        headers: { 'api-key': adminKey },
     });
 
 export const registerTool = (adminKey, toolData) =>
-    axios.post(`${BASE_URL}/tools/register`, toolData, {
+    axios.post(`${MCP_URL}/tools/register`, toolData, {
         headers: {'api-key': adminKey},
     });
 
 export const fetchAdminLogs = (adminKey) =>
-    axios.get(`${BASE_URL}/trace`, {
+    axios.get(`${MCP_URL}/trace`, {
         headers: {'api-key': adminKey},
     });

@@ -237,3 +237,114 @@ pre {
     font-family: "Fira Code", monospace;
     font-size: 0.87em;
 }
+
+/* RateLimitBanner styles */
+.rl-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #fff7ed; /* warm amber-ish */
+    border: 1px solid #fed7aa;
+    color: #7c2d12;
+    margin: 12px 0 16px;
+}
+
+.rl-banner.compact {
+    padding: 8px 10px;
+}
+
+.rl-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.rl-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.rl-title {
+    font-weight: 700;
+    margin-bottom: 2px;
+    font-size: 0.95rem;
+}
+
+.rl-message {
+    font-size: 0.9rem;
+    opacity: 0.95;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rl-meter {
+    margin-top: 6px;
+    height: 6px;
+    background: #fff1e6;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.rl-meter-bar {
+    height: 100%;
+    width: 0%;
+    background: #fb923c; /* no need to theme too hard */
+    transition: width 0.4s linear;
+}
+
+.rl-action {
+    border: 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #7c2d12;
+    color: #fff;
+    cursor: pointer;
+}
+
+.rl-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Disabled state during cooldown */
+.tool-card.disabled {
+    opacity: 0.55;
+    pointer-events: none;
+    filter: grayscale(0.2);
+}
+
+/* Skeleton shimmer */
+.tool-card.skeleton {
+    position: relative;
+    overflow: hidden;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-card .skeleton-bar {
+    width: 70%;
+    height: 14px;
+    border-radius: 6px;
+    background: #eee;
+    position: relative;
+    overflow: hidden;
+}
+
+.tool-card.skeleton .skeleton-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .6), rgba(255, 255, 255, 0));
+    animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}

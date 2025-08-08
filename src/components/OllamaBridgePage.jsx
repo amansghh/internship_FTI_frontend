@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import "../assets/css/OllamaBridge.css";
 import "../assets/css/ToolsTab.css";
 import "../assets/css/SecureFile.css";
@@ -7,8 +7,11 @@ import remarkGfm from "remark-gfm";
 import {Prism as Syntax} from "react-syntax-highlighter";
 import {dracula} from "react-syntax-highlighter/dist/esm/styles/prism";
 import {ollamaBridgeService} from "../services/ollamaBridgeService";
+import RateLimitBanner from "../components/RateLimitBanner.jsx";
+import {useRateLimit} from "../context/RateLimitContext.jsx";
+import {consume, getRetryAt, getTierConfig} from "../utils/llmLocalLimiter";
 
-/* ── File preview component (unchanged) ─────────────────────────────── */
+/* ── File preview (unchanged) ───────────────────────────────────────── */
 const FileBlock = ({file}) => {
     const [expanded, setExpanded] = useState(false);
     const [previewing, setPreviewing] = useState(false);
@@ -58,17 +61,12 @@ const FileBlock = ({file}) => {
             {previewing && (
                 <div className="modal-overlay" onClick={() => setPreviewing(false)}>
                     <div className="modal-window" onClick={(e) => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setPreviewing(false)}>
-                            ×
-                        </button>
+                        <button className="modal-close" onClick={() => setPreviewing(false)}>×</button>
 
                         {mimeType.startsWith("image/") && (
                             <img
                                 src={URL.createObjectURL(
-                                    new Blob(
-                                        [Uint8Array.from(atob(rawData), (c) => c.charCodeAt(0))],
-                                        {type: mimeType}
-                                    )
+                                    new Blob([Uint8Array.from(atob(rawData), (c) => c.charCodeAt(0))], {type: mimeType})
                                 )}
                                 alt={filename}
                                 style={{maxWidth: "100%"}}
@@ -78,10 +76,7 @@ const FileBlock = ({file}) => {
                         {mimeType === "application/pdf" && (
                             <iframe
                                 src={URL.createObjectURL(
-                                    new Blob(
-                                        [Uint8Array.from(atob(rawData), (c) => c.charCodeAt(0))],
-                                        {type: mimeType}
-                                    )
+                                    new Blob([Uint8Array.from(atob(rawData), (c) => c.charCodeAt(0))], {type: mimeType})
                                 )}
                                 width="100%"
                                 height="500"
@@ -97,15 +92,11 @@ const FileBlock = ({file}) => {
               </pre>
                         )}
 
-                        {!mimeType.startsWith("image/")
-                            && mimeType !== "application/pdf"
-                            && !mimeType.startsWith("text/") && (
-                                <p>Preview not supported for {mimeType}</p>
-                            )}
+                        {!mimeType.startsWith("image/") && mimeType !== "application/pdf" && !mimeType.startsWith("text/") && (
+                            <p>Preview not supported for {mimeType}</p>
+                        )}
 
-                        <button className="download-btn" onClick={download}>
-                            ⬇ Download
-                        </button>
+                        <button className="download-btn" onClick={download}>⬇ Download</button>
                     </div>
                 </div>
             )}
@@ -113,69 +104,58 @@ const FileBlock = ({file}) => {
     );
 };
 
-/* ── Pretty JSON viewer (unchanged) ─────────────────────────────────── */
 const JsonBlock = React.memo(({obj}) => (
     <div className="json-preview centered">
-        <Syntax
-            language="json"
-            style={dracula}
-            wrapLongLines
-            showLineNumbers={false}
-            customStyle={{background: "transparent", fontSize: "0.9rem", padding: 0}}
-        >
+        <Syntax language="json" style={dracula} wrapLongLines showLineNumbers={false}
+                customStyle={{background: "transparent", fontSize: "0.9rem", padding: 0}}>
             {JSON.stringify(obj, null, 2)}
         </Syntax>
     </div>
 ));
 
-/* ── MAIN COMPONENT ─────────────────────────────────────────────────-- */
 export default function OllamaBridgePage() {
     const [userInput, setUserInput] = useState("");
     const [chatLog, setChatLog] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selected, setSelected] = useState(null);
-    const [awaitingDesc, setAwaitingDesc] = useState(null); // ← filename waiting for description
+    const [awaitingDesc, setAwaitingDesc] = useState(null);
 
-    /* helper to push new chat message */
+    // Local LLM banner (independent from global MCP banner)
+    const [llmUntil, setLlmUntil] = useState(null);
+    const isCooling = useMemo(() => llmUntil && Date.now() < llmUntil, [llmUntil]);
+
+    // Store last action so Retry can re-run it
+    const [lastAction, setLastAction] = useState(null); // { kind: 'chat'|'desc', prompt }
+
+    // If you want different tier: set VITE_LLM_RATE_TIER=basic|premium|unlimited
+    const {tier, cfg} = getTierConfig();
+
+    // Optional: clearing global banner on success (harmless if none)
+    const {clearRate} = useRateLimit();
+
     const push = (msg) => setChatLog((c) => [...c, msg]);
 
-    const submit = async () => {
-        if (!userInput.trim()) return;
-        const prompt = userInput.trim();
+    const startConsumeOrBlock = () => {
+        const res = consume(tier);
+        if (!res.ok) {
+            setLlmUntil(res.retryAt || getRetryAt(tier));
+            push({role: "assistant", text: `⏳ LLM rate limited — wait to retry`});
+            return false;
+        }
+        return true;
+    };
 
-        /* 1 ▸ send user message */
+    async function doChat(prompt) {
         push({role: "user", text: prompt});
-        setUserInput("");
         setLoading(true);
-
         try {
-            /* 2 ▸ if we’re waiting for a description → call secure_transfer */
-            if (awaitingDesc) {
-                const result = await ollamaBridgeService.run("secure_transfer", {
-                    action: "upload",
-                    filename: awaitingDesc,
-                    description: prompt,
-                });
-                push({
-                    role: "assistant",
-                    text: `🔧 Called secure_transfer (upload '${awaitingDesc}')`,
-                    result,
-                });
-                setAwaitingDesc(null);
-                setLoading(false);
-                return;
-            }
-
-            /* 3 ▸ normal flow via service */
             const out = await ollamaBridgeService.call(prompt);
+            setLlmUntil(null); // success clears local banner
+            clearRate?.();
 
             if (out.askDesc) {
-                /* backend asked for a description – store state & prompt user */
                 setAwaitingDesc(out.file);
-                push({
-                    role: "assistant",
-                    text: `🤖 Please provide a short description for '${out.file}'.`,
-                });
+                push({role: "assistant", text: `🤖 Please provide a short description for '${out.file}'.`});
             } else if (out.tools) {
                 push({role: "assistant", tools: out.tools});
             } else if (out.prompts) {
@@ -183,7 +163,6 @@ export default function OllamaBridgePage() {
             } else if (out.tool) {
                 let msg = `🔧 Called ${out.tool}`;
                 let result = out.result;
-
                 if (out.tool === "download_file" && result?.data) {
                     const {filename, mimeType, size, data: rawData} = result;
                     msg += `\n💾 File ready: ${filename}`;
@@ -194,17 +173,86 @@ export default function OllamaBridgePage() {
                 push({role: "assistant", text: out.reply});
             }
         } catch (err) {
+            // If Ollama errors, just show it. (There is no backend 429 here.)
             push({role: "assistant", text: `❌ ${err.message}`});
-            setAwaitingDesc(null);
         } finally {
             setLoading(false);
         }
+    }
+
+    async function doUploadDesc(description) {
+        setLoading(true);
+        try {
+            const result = await ollamaBridgeService.run("secure_transfer", {
+                action: "upload",
+                filename: awaitingDesc,
+                description,
+            });
+            setAwaitingDesc(null);
+            setLlmUntil(null);
+            clearRate?.();
+            push({role: "assistant", text: `🔧 Called secure_transfer (upload '${awaitingDesc}')`, result});
+        } catch (err) {
+            push({role: "assistant", text: `❌ ${err.message}`});
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const submit = async () => {
+        if (!userInput.trim() || isCooling) return;
+
+        // client-side rate limit hit?
+        if (!startConsumeOrBlock()) return;
+
+        const prompt = userInput.trim();
+        setUserInput("");
+
+        if (awaitingDesc) {
+            setLastAction({kind: 'desc', prompt});
+            await doUploadDesc(prompt);
+        } else {
+            setLastAction({kind: 'chat', prompt});
+            await doChat(prompt);
+        }
     };
 
-    /* ── RENDER ─────────────────────────────────────────────────────── */
+    const retry = async () => {
+        if (!lastAction) return;
+
+        // If still in cooldown, wait until it's actually expired
+        if (Date.now() < (llmUntil || 0)) return;
+
+        // Clear cooldown immediately so UI enables
+        setLlmUntil(null);
+
+        // Consume slot again (fresh window) — only if tier has a limit
+        const {cfg} = getTierConfig();
+        if (cfg && !consume(tier).ok) {
+            // Somehow still rate limited (shouldn't happen unless window not reset)
+            return;
+        }
+
+        if (lastAction.kind === 'desc') {
+            await doUploadDesc(lastAction.prompt);
+        } else {
+            await doChat(lastAction.prompt);
+        }
+    };
+
+
     return (
         <div className="bridge-container">
             <h2 className="bridge-title">Ollama ⇆ MCP</h2>
+
+            {/* Local LLM-only banner */}
+            {llmUntil && (
+                <RateLimitBanner
+                    message={`LLM rate limit (${tier}${cfg ? `: ${cfg.limit}/${cfg.windowSeconds}s` : ''})`}
+                    until={llmUntil}
+                    onRetry={retry}
+                />
+            )}
 
             <div className="chat-log">
                 {chatLog.map((m, i) => (
@@ -217,8 +265,9 @@ export default function OllamaBridgePage() {
                                 {m.tools.map((t) => (
                                     <div
                                         key={t.name}
-                                        className="tool-card"
-                                        onClick={() => setSelected(t)}
+                                        className={`tool-card ${isCooling ? 'disabled' : ''}`}
+                                        onClick={() => !isCooling && setSelected(t)}
+                                        title={isCooling ? 'Rate limited — wait to interact' : t.name}
                                     >
                                         <h4>{t.name}</h4>
                                     </div>
@@ -231,8 +280,9 @@ export default function OllamaBridgePage() {
                                 {m.prompts.map((p) => (
                                     <div
                                         key={p.name}
-                                        className="tool-card"
-                                        onClick={() => setSelected(p)}
+                                        className={`tool-card ${isCooling ? 'disabled' : ''}`}
+                                        onClick={() => !isCooling && setSelected(p)}
+                                        title={isCooling ? 'Rate limited — wait to interact' : p.name}
                                     >
                                         <h4>{p.name}</h4>
                                     </div>
@@ -240,48 +290,30 @@ export default function OllamaBridgePage() {
                             </div>
                         )}
 
-                        {m.result &&
-                            (m.result.rawData ? (
-                                <FileBlock file={m.result}/>
-                            ) : (
-                                <JsonBlock obj={m.result}/>
-                            ))}
+                        {m.result && (m.result.rawData ? <FileBlock file={m.result}/> : <JsonBlock obj={m.result}/>)}
                     </div>
                 ))}
             </div>
 
-            {/* detail modal for tool or prompt */}
+            {/* detail modal for tool or prompt (unchanged aside from disabled look) */}
             {selected && (
-                <div
-                    className="tool-detail-overlay"
-                    onClick={() => setSelected(null)}
-                >
-                    <div
-                        className="tool-detail"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button className="close-btn" onClick={() => setSelected(null)}>
-                            ×
-                        </button>
+                <div className="tool-detail-overlay" onClick={() => setSelected(null)}>
+                    <div className="tool-detail" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-btn" onClick={() => setSelected(null)}>×</button>
                         <h3>{selected.name}</h3>
-
                         <div className="tool-markdown">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
                                     code: ({inline, className, children, ...props}) =>
                                         inline ? (
-                                            <code className={className} {...props}>
-                                                {children}
-                                            </code>
+                                            <code className={className} {...props}>{children}</code>
                                         ) : (
-                                            <Syntax
-                                                style={dracula}
-                                                language={(className || "").replace("language-", "")}
-                                                PreTag="div"
-                                                wrapLongLines
-                                                customStyle={{background: "#282a36", borderRadius: 6}}
-                                                {...props}
+                                            <Syntax style={dracula}
+                                                    language={(className || "").replace("language-", "")}
+                                                    PreTag="div" wrapLongLines
+                                                    customStyle={{background: "#282a36", borderRadius: 6}}
+                                                    {...props}
                                             >
                                                 {String(children).replace(/\n$/, "")}
                                             </Syntax>
@@ -291,36 +323,24 @@ export default function OllamaBridgePage() {
                                 {selected.description}
                             </ReactMarkdown>
                         </div>
-
                         <div className="tool-detail-body">
                             <div className="tool-info">
                                 <div className="tool-meta">
-                                    {"binary" in selected && (
-                                        <p>
-                                            <strong>Binary:</strong>{" "}
-                                            {selected.binary ? "✅ Yes" : "❌ No"}
-                                        </p>
-                                    )}
-                                    {"fti_only" in selected && (
-                                        <p>
-                                            <strong>FTI Only:</strong>{" "}
-                                            {selected.fti_only ? "✅ Yes" : "❌ No"}
-                                        </p>
-                                    )}
+                                    {"binary" in selected &&
+                                        <p><strong>Binary:</strong> {selected.binary ? "✅ Yes" : "❌ No"}</p>}
+                                    {"fti_only" in selected &&
+                                        <p><strong>FTI Only:</strong> {selected.fti_only ? "✅ Yes" : "❌ No"}</p>}
                                 </div>
-
                                 <div className="tool-schema">
                                     <h4>Input Schema</h4>
+                                    {/* best-effort schema rendering */}
                                     {selected.inputSchema && Object.keys(selected.inputSchema).length ? (
                                         <JsonBlock obj={selected.inputSchema}/>
                                     ) : selected.parameters && Object.keys(selected.parameters).length ? (
                                         <JsonBlock obj={selected.parameters}/>
                                     ) : selected.arguments && selected.arguments.length ? (
                                         <JsonBlock
-                                            obj={Object.fromEntries(
-                                                selected.arguments.map((a) => [a.name, "string"])
-                                            )}
-                                        />
+                                            obj={Object.fromEntries(selected.arguments.map((a) => [a.name, "string"]))}/>
                                     ) : (
                                         <p className="schema-placeholder">No input schema.</p>
                                     )}
@@ -337,10 +357,12 @@ export default function OllamaBridgePage() {
                     className="chat-input"
                     value={userInput}
                     onChange={(e) => setUserInput(e.target.value)}
-                    placeholder="Type your prompt…"
+                    placeholder={isCooling ? "Rate limited — wait to retry…" : "Type your prompt…"}
                     onKeyDown={(e) => e.key === "Enter" && submit()}
+                    disabled={loading || isCooling}
+                    title={isCooling ? "Rate limited — wait to retry" : "Type your prompt"}
                 />
-                <button className="chat-send-btn" onClick={submit} disabled={loading}>
+                <button className="chat-send-btn" onClick={submit} disabled={loading || isCooling}>
                     {loading ? "Thinking…" : awaitingDesc ? "Send desc" : "Send"}
                 </button>
             </div>

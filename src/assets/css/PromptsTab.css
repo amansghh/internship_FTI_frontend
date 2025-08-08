@@ -115,3 +115,44 @@ pre {
     color: #888;
     cursor: pointer;
 }
+
+/* Disabled state during cooldown */
+.prompt-card.disabled {
+    opacity: 0.55;
+    pointer-events: none;
+    filter: grayscale(0.2);
+}
+
+/* Skeleton shimmer */
+.prompt-card.skeleton {
+    position: relative;
+    overflow: hidden;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.prompt-card .skeleton-bar {
+    width: 70%;
+    height: 14px;
+    border-radius: 6px;
+    background: #eee;
+    position: relative;
+    overflow: hidden;
+}
+
+.prompt-card.skeleton .skeleton-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .6), rgba(255, 255, 255, 0));
+    animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}

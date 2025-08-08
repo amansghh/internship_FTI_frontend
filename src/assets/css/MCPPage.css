@@ -65,3 +65,29 @@
     }
 }
 
+.mcp-tab-content {
+    position: relative;
+}
+
+.mcp-tab-content.dimmed-disabled {
+    pointer-events: none; /* block clicks while rate-limited */
+    filter: grayscale(0.2);
+    opacity: 0.6;
+}
+
+.dimmed-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    /* subtle overlay so users still see content */
+    background: linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.4));
+}
+
+/* small visual for disabled cards */
+.prompt-card.disabled,
+.tool-card.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+

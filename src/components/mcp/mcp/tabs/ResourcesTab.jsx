@@ -1,10 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState, useCallback} from 'react';
 import {useResources} from '../../../../hooks/useResources.js';
 import {useToolRunner} from '../../../../hooks/useToolRunner.js';
 import '../../../../assets/css/ResourcesTab.css';
 import ReactMarkdown from 'react-markdown';
 import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
 import {dracula} from 'react-syntax-highlighter/dist/esm/styles/prism';
+import {useRateLimit} from '../../../../context/RateLimitContext.jsx';
 
 /* helper: base64 → Blob URL */
 const b64ToUrl = (b64, mime) => {
@@ -12,61 +13,93 @@ const b64ToUrl = (b64, mime) => {
     return URL.createObjectURL(new Blob([bytes], {type: mime}));
 };
 
-const ResourcesTab = () => {
+function SkeletonList({count = 6}) {
+    return Array.from({length: count}).map((_, i) => (
+        <div key={i} className="resource-card skeleton disabled">
+            <div className="skeleton-bar"/>
+        </div>
+    ));
+}
+
+const ResourcesTab = ({setRefetch}) => {
     const {
         resources,
         loading,
-        error,
+        fetchingList,
+        listError,
+        showEmptyList,
         selected,
         setSelected,
         content,
+        contentLoading,
+        contentError,
+        fetchList,
         fetchContent,
         subscribe,
         unsubscribe,
         subscriptions,
     } = useResources();
 
-    const [expanded, setExpanded] = useState('content');
-    const toggle = section => setExpanded(expanded === section ? null : section);
-    const { run, running, output, error: runErr, setOutput } = useToolRunner();
+    const {run, running, output, error: runErr, setOutput} = useToolRunner();
+    const {rate} = useRateLimit();
 
-    // Clear output when switching resources
+    // Only disable interactions during cooldown (timer > 0)
+    const isCooling = useMemo(
+        () => Boolean(rate?.until && Date.now() < rate.until),
+        [rate?.until]
+    );
+
+    // Clear tool output when switching resources
     useEffect(() => {
         setOutput(null);
-    }, [selected]);
+    }, [selected, setOutput]);
 
-    const prettyOutput = output?.data
-        ? {
-            filename: output.filename,
-            mimeType: output.mimeType,
-            size: output.size,
-        }
-        : null;
+    // Global Retry should refetch list if nothing selected; otherwise refetch content of selected
+    const refetchCurrent = useCallback(() => {
+        if (selected) fetchContent(selected);
+        else fetchList();
+    }, [selected, fetchContent, fetchList]);
 
-    if (loading) return <p>Loading resources...</p>;
-    if (error) return <p className="error-msg">❌ {error}</p>;
+    useEffect(() => {
+        setRefetch?.(refetchCurrent);
+        return () => setRefetch?.(null);
+    }, [refetchCurrent, setRefetch]);
 
     const isSubscribed = selected && subscriptions.has(selected);
-
 
     return (
         <div className="resources-tab">
             <div className="resource-list">
-                {resources.map((r, i) => (
-                    <div
-                        key={i}
-                        className={`resource-card ${selected === r.uri ? 'active' : ''}`}
-                        onClick={() => {
-                            setSelected(r.uri);
-                            fetchContent(r.uri);
-                            setExpanded('content');
-                            setOutput(null); // 🧹 Clear previous tool output
-                        }}
-                    >
-                        {r.uri.replace(/^file:\/\//, '')}
+                {loading ? (
+                    <SkeletonList/>
+                ) : showEmptyList ? (
+                    <div className="resource-empty">
+                        {fetchingList ? 'Refreshing…' : 'No resources available yet.'}
                     </div>
-                ))}
+                ) : resources.length > 0 ? (
+                    resources.map((r, i) => (
+                        <div
+                            key={i}
+                            className={`resource-card ${selected === r.uri ? 'active' : ''} ${isCooling ? 'disabled' : ''}`}
+                            onClick={() => {
+                                if (isCooling) return;
+                                setSelected(r.uri);
+                                fetchContent(r.uri);
+                                setOutput(null);
+                            }}
+                            title={isCooling ? 'Rate limited — wait to interact' : r.uri}
+                        >
+                            {r.uri.replace(/^file:\/\//, '')}
+                        </div>
+                    ))
+                ) : (
+                    <SkeletonList/>
+                )}
             </div>
+
+            {listError && !isCooling && (
+                <p className="error-msg" style={{marginTop: '.5rem'}}>❌ {listError}</p>
+            )}
 
             {selected && (
                 <div className="resource-modal-overlay" onClick={() => setSelected(null)}>
@@ -76,33 +109,33 @@ const ResourcesTab = () => {
                             <h3 className="resource-title">{selected.replace(/^file:\/\//, '')}</h3>
                             <button
                                 className="fti-subscribe-btn"
+                                disabled={isCooling}
                                 onClick={() => isSubscribed ? unsubscribe(selected) : subscribe(selected)}
+                                title={isCooling ? 'Rate limited — wait to interact' : (isSubscribed ? 'Unsubscribe' : 'Subscribe')}
                             >
                                 {isSubscribed ? '🔕 Unsubscribe' : '🔔 Subscribe'}
                             </button>
                         </div>
 
-
-                        {runErr && (
-                            <p className="error-msg" style={{marginTop: '.5rem'}}>❌ {runErr}</p>
-                        )}
-
-
                         {/* Content Accordion */}
                         <div className="accordion-section">
                             <div
-                                className={`accordion-header ${expanded === 'content' ? 'expanded' : ''}`}
-                                onClick={() => toggle('content')}
+                                className={`accordion-header ${'content' ? 'expanded' : ''}`}
+                                onClick={() => {
+                                }}
                             >
-                                <span className={`triangle ${expanded === 'content' ? 'open' : ''}`}>&#9654;</span>
+                                <span className={`triangle ${'content' ? 'open' : ''}`}>&#9654;</span>
                                 <h4>📝 Content</h4>
                             </div>
-                            <div className={`accordion-body-wrapper ${expanded === 'content' ? 'open' : ''}`}>
+                            <div className={`accordion-body-wrapper open`}>
                                 <div className="accordion-body">
-                                    {content.text
-                                        ? <pre className="scroll-content">{content.text}</pre>
-                                        : <div className="scroll-content loading-msg">⏳ Loading content...</div>
-                                    }
+                                    {contentLoading && !content.text ? (
+                                        <div className="scroll-content loading-msg">⏳ Loading content...</div>
+                                    ) : content.text ? (
+                                        <pre className="scroll-content">{content.text}</pre>
+                                    ) : (
+                                        <div className="scroll-content loading-msg">No content.</div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -110,14 +143,12 @@ const ResourcesTab = () => {
                         {/* Metadata Accordion */}
                         {content.metadata && (
                             <div className="accordion-section">
-                                <div
-                                    className={`accordion-header ${expanded === 'metadata' ? 'expanded' : ''}`}
-                                    onClick={() => toggle('metadata')}
-                                >
-                                    <span className={`triangle ${expanded === 'metadata' ? 'open' : ''}`}>&#9654;</span>
+                                <div className={`accordion-header expanded`} onClick={() => {
+                                }}>
+                                    <span className={`triangle open`}>&#9654;</span>
                                     <h4>📌 Metadata</h4>
                                 </div>
-                                <div className={`accordion-body-wrapper ${expanded === 'metadata' ? 'open' : ''}`}>
+                                <div className={`accordion-body-wrapper open`}>
                                     <div className="accordion-body">
                                         <div className="scroll-content markdown-preview">
                                             <ReactMarkdown>{content.metadata}</ReactMarkdown>
@@ -127,30 +158,35 @@ const ResourcesTab = () => {
                             </div>
                         )}
 
+                        {contentError && !isCooling && (
+                            <p className="error-msg" style={{marginTop: '.5rem'}}>❌ {contentError}</p>
+                        )}
+
                         {/* ⬇️ Download Button */}
                         <button
                             className="download-btn"
-                            disabled={running}
+                            disabled={running || isCooling || !selected}
                             onClick={() => run('download_file', {uri: selected})}
+                            title={isCooling ? 'Rate limited — wait to interact' : 'Download'}
                         >
                             {running ? 'Downloading…' : '⬇️ Download'}
                         </button>
 
                         {/* JSON Preview */}
-                        {prettyOutput && (
+                        {output?.data && (
                             <div className="runner-output json-preview centered">
                                 <SyntaxHighlighter
                                     language="json"
                                     style={dracula}
                                     showLineNumbers={false}
-                                    wrapLongLines={true}
-                                    customStyle={{
-                                        background: 'transparent',
-                                        fontSize: '0.9rem',
-                                        padding: '0'
-                                    }}
+                                    wrapLongLines
+                                    customStyle={{background: 'transparent', fontSize: '0.9rem', padding: 0}}
                                 >
-                                    {JSON.stringify(prettyOutput, null, 2)}
+                                    {JSON.stringify({
+                                        filename: output.filename,
+                                        mimeType: output.mimeType,
+                                        size: output.size,
+                                    }, null, 2)}
                                 </SyntaxHighlighter>
                             </div>
                         )}
@@ -171,7 +207,6 @@ const ResourcesTab = () => {
                                 💾 Save {output.filename}
                             </button>
                         )}
-
                     </div>
                 </div>
             )}

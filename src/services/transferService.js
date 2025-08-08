@@ -40,15 +40,19 @@ export const uploadFileOnly = async (file, description, ctx) => {
     }, ctx);
 };
 
+const PROVIDER_HOST = import.meta.env.VITE_PROVIDER_HOST;
+const PROVIDER_PORT = Number(import.meta.env.VITE_PROVIDER_PORT || "80");
+const PROVIDER_API_KEY = import.meta.env.VITE_PROVIDER_API_KEY;
+
 /* 2. 📄 List (consumer) */
 export const listFilesFromProvider = async ctx => {
     const res = await fetch(`${BASE}/remote-files`, {
         method: "POST",
         headers: {"Content-Type": "application/json", "api-key": ctx.apiKey},
         body: JSON.stringify({
-            remote_host: "backend-provider",
-            remote_port: 8000,
-            remote_api_key: "GljLPrzMYT5V5X5-6HmiQKHEcZsk3qzae9bQmZhIXTE"
+            remote_host: PROVIDER_HOST,
+            remote_port: PROVIDER_PORT,
+            remote_api_key: PROVIDER_API_KEY
         })
     });
     if (!res.ok) throw new Error(await res.text());
@@ -65,9 +69,9 @@ export const downloadFile = (fileId, ctx) => callMcp({
         arguments: {
             action: "download",
             file_id: fileId,
-            remote_host: "backend-provider",
-            remote_port: 8000,
-            remote_api_key: "GljLPrzMYT5V5X5-6HmiQKHEcZsk3qzae9bQmZhIXTE"
+            remote_host: PROVIDER_HOST,
+            remote_port: PROVIDER_PORT,
+            remote_api_key: PROVIDER_API_KEY
         }
     }
 }, ctx);
