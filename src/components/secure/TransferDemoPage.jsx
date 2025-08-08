@@ -4,6 +4,7 @@ import {Copy, UploadCloud, Download, Info, X} from "lucide-react";
 import "../../assets/css/TransferDemo.css";
 import useSecureTransfer from "../../hooks/useSecureTransfer";
 import {ToastProvider, useToast} from "../ui/Toast.jsx";
+import {useMcpContext} from "../../context/McpContext";
 
 export default function TransferDemoPage() {
     return (
@@ -13,9 +14,8 @@ export default function TransferDemoPage() {
     );
 }
 
-const ROLE = import.meta.env.VITE_ROLE || "sender";   // "sender" (provider) | "receiver" (consumer)
+const ROLE = import.meta.env.VITE_ROLE || "sender";   // "sender" (provider) | "receiver"
 
-/* ─────────────────────────────── UI helpers ─────────────────────────────── */
 function CopyButton({text}) {
     const toast = useToast();
     const copy = async () => {
@@ -29,7 +29,6 @@ function CopyButton({text}) {
     );
 }
 
-/* centre-screen modal */
 function Modal({open, onClose, children}) {
     if (!open) return null;
     return (
@@ -44,7 +43,6 @@ function Modal({open, onClose, children}) {
     );
 }
 
-/* pretty-print last JSON-RPC response */
 function JsonPreview({data}) {
     const [expanded, setExpanded] = useState({});
     const toggle = k => setExpanded(p => ({...p, [k]: !p[k]}));
@@ -59,9 +57,7 @@ function JsonPreview({data}) {
                         {long ? (
                             <>
                 <span className="jp-val">
-                  "
-                    {expanded[k] ? v : `${v.slice(0, 70)}… (${v.length} chars)`}
-                    "
+                  "{expanded[k] ? v : `${v.slice(0, 70)}… (${v.length} chars)`}"
                 </span>
                                 <button className="jp-toggle" onClick={() => toggle(k)}>
                                     {expanded[k] ? "hide" : "show"}
@@ -79,9 +75,9 @@ function JsonPreview({data}) {
     );
 }
 
-/* ─────────────────────────────── Main component ─────────────────────────────── */
 function TransferDemoContent() {
     const {status, upload, listAvailable, pull, decrypt} = useSecureTransfer();
+    const {apiKey} = useMcpContext();
 
     /* Provider state */
     const [selectedFile, setSelectedFile] = useState(null);
@@ -93,18 +89,18 @@ function TransferDemoContent() {
 
     /* Consumer state */
     const [fileList, setFileList] = useState([]);
-    const [modalInfo, setModalInfo] = useState(null);      // shows on ℹ️ click
+    const [modalInfo, setModalInfo] = useState(null);
 
     const toast = useToast();
 
-    /* consumer loads provider catalogue on mount */
+    /* consumer loads provider catalogue on mount — only when API key is ready */
     useEffect(() => {
-        if (ROLE === "receiver") {
+        if (ROLE === "receiver" && apiKey) {
             listAvailable()
                 .then(setFileList)
                 .catch(err => toast.error(err.message || "Failed to load files"));
         }
-    }, [listAvailable]);
+    }, [listAvailable, apiKey]);
 
     /* ——— Provider handlers ——— */
     const handleFilePick = e => setSelectedFile(e.target.files[0] || null);
@@ -126,11 +122,10 @@ function TransferDemoContent() {
     /* ——— Consumer handlers ——— */
     const handlePull = async id => {
         try {
-            const enc = await pull(id);     // sets "Downloading…" status
-            const plain = await decrypt(enc); // sets "Decrypting…" status
+            const enc = await pull(id);
+            const plain = await decrypt(enc);
             setLastResp(plain);
 
-            /* auto-download decrypted bytes */
             const base64 = plain.data_b64 || plain.data;
             if (!base64) throw new Error("Decrypted payload missing data_b64");
             const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
@@ -148,7 +143,6 @@ function TransferDemoContent() {
         }
     };
 
-    /* role-based palette */
     const palette = useMemo(
         () => ROLE === "sender"
             ? {brand: "#2563eb", light: "#eff6ff", dark: "#1e40af"}
@@ -165,18 +159,15 @@ function TransferDemoContent() {
                 {ROLE === "sender" ? "🚀 Provider Portal" : "📥 Consumer Portal"}
             </header>
 
-            {/* ───────────────────── Provider UI ───────────────────── */}
             {ROLE === "sender" && (
                 <section className="td-card">
                     <h3><UploadCloud size={18}/> Upload (Provider)</h3>
 
-                    {/* file picker */}
                     <label className="file-label">
                         <input type="file" onChange={handleFilePick}/>
                         {selectedFile ? selectedFile.name : "Choose file…"}
                     </label>
 
-                    {/* description textbox */}
                     <input
                         type="text"
                         className="td-input"
@@ -185,7 +176,6 @@ function TransferDemoContent() {
                         onChange={e => setFileDesc(e.target.value)}
                     />
 
-                    {/* upload button */}
                     <button
                         className="td-btn primary"
                         onClick={handleUpload}
@@ -200,7 +190,6 @@ function TransferDemoContent() {
                 </section>
             )}
 
-            {/* ───────────────────── Consumer UI ───────────────────── */}
             {ROLE === "receiver" && (
                 <section className="td-card">
                     <h3><Download size={18}/> Available Files</h3>
@@ -211,7 +200,6 @@ function TransferDemoContent() {
                                 <li key={f.file_id}>
                                     <span className="td-file">{f.filename}</span>
 
-                                    {/* open modal with details */}
                                     <button
                                         className="td-btn ghost icon"
                                         aria-label="Details"
@@ -234,11 +222,9 @@ function TransferDemoContent() {
                 </section>
             )}
 
-            {/* status & last response */}
             {status && <p className="td-status">{status}</p>}
             {lastResp && <JsonPreview data={lastResp}/>}
 
-            {/* description modal */}
             <Modal open={!!modalInfo} onClose={() => setModalInfo(null)}>
                 {modalInfo && (
                     <>

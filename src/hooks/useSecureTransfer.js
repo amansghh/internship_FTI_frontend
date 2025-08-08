@@ -4,10 +4,10 @@ import {
     uploadFileOnly,
     listFilesFromProvider,
     downloadFile,
-    decryptFile
+    decryptFile,
 } from "../services/transferService";
 
-const PROTO = "2025-03-26";
+const PROTO = "2025-06-18"; // single source of truth
 
 export default function useSecureTransfer() {
     const {
@@ -18,8 +18,12 @@ export default function useSecureTransfer() {
 
     const [status, setStatus] = useState("");
 
-    /* ensure MCP session */
     const ensureSession = useCallback(async () => {
+        // Don't attempt without an API key
+        if (!apiKey) {
+            throw new Error("API key not ready");
+        }
+        // Reuse existing session
         if (sessionId) return sessionId;
 
         const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/mcp`, {
@@ -38,16 +42,20 @@ export default function useSecureTransfer() {
         }).then(r => r.json());
 
         if (res.error) throw new Error(res.error.message);
+
+        // Persist session + protocol; also expose a global for services that can't read context
         setSessionId(res.result.session_id);
         setInitialized(true);
         setProtocolVersion(PROTO);
-        return res.result.session_id;
-    }, [apiKey, sessionId]);
+        window.__MCP_PROTOCOL_VERSION__ = PROTO;
 
-    const buildCtx = useCallback(async () => ({apiKey, sessionId: await ensureSession()}), [
+        return res.result.session_id;
+    }, [apiKey, sessionId, setInitialized, setProtocolVersion, setSessionId]);
+
+    const buildCtx = useCallback(async () => ({
         apiKey,
-        ensureSession
-    ]);
+        sessionId: await ensureSession()
+    }), [apiKey, ensureSession]);
 
     /* provider upload */
     const upload = useCallback(async (file, description = "") => {
