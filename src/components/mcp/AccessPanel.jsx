@@ -103,7 +103,7 @@ const AccessPanel = () => {
             </div>
 
             {serverResponse && (
-                <div className="json-preview animated">
+                <div className="json-preview2 animated">
                     <SyntaxHighlighter
                         language="json"
                         style={dracula}

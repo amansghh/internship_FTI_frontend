@@ -36,6 +36,8 @@ export const useTools = () => {
         setFetching(true);
         try {
             const result = await listTools(apiKey, sessionId, protocolVersion);
+            console.log("TOOLS RESPONSE:", result);
+
             const arr = Array.isArray(result) ? result : [];
 
             if (arr.length > 0) {
