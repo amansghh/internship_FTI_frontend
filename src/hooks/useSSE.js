@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {useMcpContext} from '../context/McpContext';
 
 // If you proxy “/mcp” → 8000 in vite.config.js you can keep PATH = '/mcp/stream'
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
 export function useSSE(path, sessionId) {
     const {apiKey} = useMcpContext();       // ← no change to context itself

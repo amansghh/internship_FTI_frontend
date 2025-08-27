@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 /* ── CONFIG ───────────────────────────────────────────────────────────── */
 const MCP_URL   = import.meta.env.VITE_BACKEND_URL + "/mcp";
 const OLLAMA_EP = "http://localhost:11434/v1/chat/completions";
-const API_KEY   = "GljLPrzMYT5V5X5-6HmiQKHEcZsk3qzae9bQmZhIXTE";
+const API_KEY   = "d_4gmAyC4yHgOIUEDIsnPPgn7evW0rQl3VZgEVylekw";
 const MODEL     = "hhao/qwen2.5-coder-tools:1.5b";
 
 const HEADERS = { "api-key": API_KEY, "Content-Type": "application/json" };

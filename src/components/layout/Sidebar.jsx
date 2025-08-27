@@ -11,7 +11,7 @@ const Sidebar = ({open, activeTab, setActiveTab}) => {
     return (
         <aside className={`sidebar ${open ? 'open' : ''}`}>
             <div className="sidebar-header">
-                <img src="/fti-v-logo-footer.svg" alt="FTI" className="sidebar-logo"/>
+                <img src="/fti.svg" alt="FTI" className="sidebar-logo"/>
                 <h2 className="sidebar-title">FTI Suite</h2>
             </div>
 

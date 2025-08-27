@@ -10,6 +10,7 @@ import {useState} from 'react';
 import SSETestPage from "./components/mcp/SSETestPage.jsx";
 import TransferDemoPage from "./components/secure/TransferDemoPage.jsx";
 import DocumentationPage from "./components/docs/DocumentationPage.jsx";
+import NotificationsProvider from './components/notifications/NotificationsProvider.jsx';
 
 function App() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -33,11 +34,12 @@ function App() {
 
     return (
         <McpProvider>
+            <NotificationsProvider onNavigate={setActiveTab}/>
             <div className="grid-layout">
                 <header className="topbar">
                     <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
                     <div className="topbar-logo-container">
-                        <img src="/fti-v-logo-footer.svg" alt="FTI Logo" className="topbar-logo"/>
+                        <img src="/fti.svg" alt="FTI Logo" className="topbar-logo"/>
                     </div>
                 </header>
 

@@ -49,6 +49,24 @@ const ResourcesTab = ({setRefetch}) => {
         [rate?.until]
     );
 
+
+    // On mount, consume an "open-intent" set by NotificationsProvider
+    useEffect(() => {
+        let intent = null;
+        try {
+            const raw = sessionStorage.getItem('mcp-open-intent');
+            if (raw) intent = JSON.parse(raw);
+        } catch {}
+
+        if (intent?.uri) {
+            setSelected(intent.uri);
+            // ⚠️ IMPORTANT: fetch immediately so the modal has content on first open
+            fetchContent(intent.uri);
+            try { sessionStorage.removeItem('mcp-open-intent'); } catch {}
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // run once when ResourcesTab mounts
+
     // Clear tool output when switching resources
     useEffect(() => {
         setOutput(null);
